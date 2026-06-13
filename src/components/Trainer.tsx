@@ -95,10 +95,10 @@ export default function Trainer({ userName, guest = false }: { userName?: string
           </span>
           <button
             type="button"
-            onClick={logout}
+            onClick={guest ? () => router.push("/login") : logout}
             className="rounded-xl bg-white px-3 py-1.5 font-bold text-muted shadow ring-1 ring-black/5 transition hover:text-ink active:scale-95"
           >
-            Выйти
+            {guest ? "Войти" : "Выйти"}
           </button>
         </div>
       </header>

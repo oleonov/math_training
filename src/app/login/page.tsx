@@ -82,7 +82,7 @@ export default function LoginPage() {
           Нет аккаунта?{" "}
           <Link
             href="/guest"
-            className="font-semibold text-brand underline decoration-2 underline-offset-4 transition hover:text-brand-strong"
+            className="font-medium text-brand underline decoration-from-font underline-offset-2 transition hover:text-brand-strong"
           >
             Войти как гость
           </Link>

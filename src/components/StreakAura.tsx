@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
 // Streak "rage mode" aura around the training card. A run of fast-and-on-time
 // answers builds an escalating effect (0→10):
 //   level 1-2 — coloured glow + a light sparkle halo, a burst on every answer
-//   level 3+  — a dense, lively sparkle halo + a gentle card shake (the "вау")
-//   level 7+  — flickering lightning arcs around the card
+//   level 3+  — a dense, lively sparkle halo + a strong card shake (the "вау")
+//   level 7+  — a crackling lightning ring encircling the card
 // A wrong answer resets to 0 and the effect fades; a correct-but-late ("slow")
 // answer keeps the streak (handled by the caller).
 //
@@ -162,26 +162,36 @@ export default function StreakAura({ level, pulseKey, children }: Props) {
       ctx.shadowBlur = 0;
     };
 
-    const drawLightning = (lv: number, color: string) => {
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2.2;
+    // A jagged "electric" ring that traces the WHOLE card out in the halo band —
+    // a closed crackling loop around the card, not stray radial bolts. Fresh
+    // per-frame jitter makes it flicker; higher levels add extra rings.
+    const lightningRing = (out: number, jit: number, width: number, alpha: number, color: string) => {
+      const P = perim();
+      const segs = 72; // sample points around the loop
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "#ffffff"; // white core reads on the light background
+      ctx.lineWidth = width;
       ctx.shadowColor = color;
-      ctx.shadowBlur = 14;
-      for (let k = 0; k < (lv - 6) * 2; k++) {
-        const p = onPerimeter(Math.random() * perim());
-        const tx = -p.ny, ty = p.nx; // tangent, for the jagged jitter
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        const segs = 4;
-        for (let s = 1; s <= segs; s++) {
-          const out = (MARGIN * 0.9 * s) / segs; // march outward into the band
-          const jit = rand(-9, 9);
-          ctx.lineTo(p.x + p.nx * out + tx * jit, p.y + p.ny * out + ty * jit);
-        }
-        ctx.stroke();
+      ctx.shadowBlur = 18;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let i = 0; i <= segs; i++) {
+        const p = onPerimeter(((P * i) / segs) % P);
+        const r = out + rand(-jit, jit);
+        const x = p.x + p.nx * r, y = p.y + p.ny * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
+      ctx.closePath();
+      ctx.stroke();
       ctx.shadowBlur = 0;
+    };
+
+    const drawLightning = (lv: number, color: string) => {
+      // Main bright ring hugging the card; extra inner/outer crackle as it peaks.
+      lightningRing(MARGIN * 0.62, 11, 2.8, 0.92, color);
+      if (lv >= 8) lightningRing(MARGIN * 0.34, 8, 1.9, 0.72, color);
+      if (lv >= 9) lightningRing(MARGIN * 0.88, 9, 1.6, 0.6, color);
     };
 
     let raf = 0;
@@ -200,7 +210,7 @@ export default function StreakAura({ level, pulseKey, children }: Props) {
           const burst = Math.min(30, 6 + lv * 2);
           for (let i = 0; i < burst; i++) spawnHalo(lv);
         }
-        if (lv >= 3) shake = Math.min(7, lv * 0.9);
+        if (lv >= 3) shake = Math.min(20, lv * 2.4); // a real jolt — ~2.5× stronger
       }
 
       ctx.clearRect(0, 0, W, H);
@@ -220,8 +230,9 @@ export default function StreakAura({ level, pulseKey, children }: Props) {
         sparkle(p.x, p.y, p.sz * (0.4 + 0.6 * p.life), p.color, Math.max(0, p.life));
       }
 
-      // Lightning from level 7 — flickers (drawn on a fraction of frames).
-      if (lv >= 7 && tick % 2 === 0) drawLightning(lv, c);
+      // Lightning ring from level 7 — drawn every frame; the per-frame jitter is
+      // the crackle, with an occasional dropped frame for a natural flicker.
+      if (lv >= 7 && tick % 7 !== 0) drawLightning(lv, c);
 
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;

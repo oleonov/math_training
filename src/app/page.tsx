@@ -7,13 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const userId = await getUserId();
-  if (!userId) redirect("/login");
+  if (!userId) redirect("/guest");
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true },
   });
-  if (!user) redirect("/login");
+  if (!user) redirect("/guest");
 
   return <Trainer userName={user.name} />;
 }
