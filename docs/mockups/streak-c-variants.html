@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Режим серии · Вариант C — проработка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-display: "Fredoka", system-ui, sans-serif;
+    --font-body: "Nunito", system-ui, sans-serif;
+    --ink: #1f2d3d; --muted: #6b7c8f;
+    --brand: #2f6df6; --brand-strong: #1d4ed8; --brand-soft: #e6efff;
+    --correct: #16a34a; --wrong: #ef4444; --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--font-body); color: var(--ink); background-color: #f4f8ff;
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, #dcebffcc 0%, transparent 55%),
+      radial-gradient(55rem 55rem at -10% 110%, #cdeafdcc 0%, transparent 55%),
+      radial-gradient(45rem 45rem at 50% 120%, #ffe6efcc 0%, transparent 50%);
+    background-attachment: fixed; -webkit-font-smoothing: antialiased; padding: 28px 20px 80px;
+  }
+  .page { max-width: 1180px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; color: var(--brand-strong); margin: 0 0 6px; }
+  .lead { color: var(--muted); font-weight: 600; max-width: 860px; margin: 0 0 8px; line-height: 1.55; }
+  .lead b { color: var(--ink); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 22px; margin-top: 24px; }
+
+  .panel {
+    background: #ffffffcc; border-radius: 26px; padding: 20px 20px 22px;
+    box-shadow: 0 18px 40px -26px rgba(31,45,61,.4), 0 0 0 1px rgba(31,45,61,.06);
+    display: flex; flex-direction: column;
+  }
+  .panel h2 { font-family: var(--font-display); font-weight: 700; font-size: 19px; margin: 0 0 2px; color: var(--ink); }
+  .panel .tech { font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.5; margin: 0 0 14px; }
+  .panel .tech b { color: var(--brand-strong); }
+
+  .stage {
+    position: relative; height: 300px; border-radius: 20px; overflow: hidden;
+    background: #f3f7ff; display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(31,45,61,.05);
+  }
+  .stage canvas { position: absolute; inset: 0; pointer-events: none; }
+
+  .minicard {
+    position: relative; z-index: 2; background: var(--card); border-radius: 22px;
+    padding: 22px 26px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 14px 30px -18px rgba(47,109,246,.5), 0 0 0 1px rgba(0,0,0,.05);
+    transition: box-shadow .18s ease; will-change: transform;
+  }
+  .minicard .eq { font-family: var(--font-display); font-weight: 600; font-size: 40px; line-height: 1; color: var(--ink); }
+  .minicard .eq .x { color: var(--muted); }
+  .minicard .ans {
+    min-width: 74px; height: 60px; padding: 0 10px; border: 3px solid var(--brand-soft); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 600; font-size: 36px; color: var(--brand-strong);
+  }
+
+  .tier { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3;
+    font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--muted); transition: color .25s; }
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .level-read { font-family: var(--font-display); font-weight: 600; font-size: 14px; color: var(--muted); margin-right: auto; }
+  .level-read b { color: var(--ink); font-size: 17px; }
+  .btn { border: 0; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    padding: 10px 14px; border-radius: 12px; transition: transform .08s ease, filter .15s ease; }
+  .btn:active { transform: scale(.95); }
+  .btn.ok { background: var(--correct); color: #fff; box-shadow: 0 8px 18px -8px rgba(22,163,74,.7); }
+  .btn.bad { background: #fff; color: var(--wrong); box-shadow: inset 0 0 0 2px #fecaca; }
+
+  .foot { margin-top: 28px; font-size: 13px; color: var(--muted); font-weight: 600; line-height: 1.6; max-width: 860px; }
+  .foot code { font-family: ui-monospace, Menlo, monospace; background: #eaf0fb; padding: 1px 6px; border-radius: 6px; color: var(--brand-strong); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Режим серии · Вариант C — проработка</h1>
+  <p class="lead">
+    База у всех одинаковая (как тебе понравилось): <b>пульс-кольца на каждый ответ</b>, <b>тряска</b> и
+    <b>молнии с 7-го уровня</b>. Отличается «фишка» среднего тира (3–6). «Вау» начинается уже с <b>3</b>.
+    Жми «верно» несколько раз подряд.
+  </p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>C1 · Многоволновые кольца</h2>
+      <p class="tech">С 3 уровня каждый ответ даёт <b>двойное</b> кольцо, с 6 — <b>тройное</b>; кольца толще и быстрее.
+        Минимум объектов, максимум «бабаха».</p>
+      <div class="stage" data-sig="rings">
+        <canvas></canvas>
+        <div class="minicard"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+        <div class="tier">Серия 0</div>
+      </div>
+      <div class="controls"><span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button><button class="btn bad">✗ Ошибка</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>C2 · Звёздная орбита</h2>
+      <p class="tech">Вокруг карточки кружат звёздочки: на 3 уровне — <b>3</b>, дальше больше и быстрее, к 10 — хоровод.
+        Звёзды мерцают. Самая «детская награда».</p>
+      <div class="stage" data-sig="stars">
+        <canvas></canvas>
+        <div class="minicard"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+        <div class="tier">Серия 0</div>
+      </div>
+      <div class="controls"><span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button><button class="btn bad">✗ Ошибка</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>C3 · Искристый ореол</h2>
+      <p class="tech">Карточку окутывает живой мерцающий ореол из разноцветных искр; плотность растёт с уровнем.
+        Магия вокруг примера.</p>
+      <div class="stage" data-sig="halo">
+        <canvas></canvas>
+        <div class="minicard"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+        <div class="tier">Серия 0</div>
+      </div>
+      <div class="controls"><span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button><button class="btn bad">✗ Ошибка</button></div>
+    </div>
+  </div>
+
+  <p class="foot">
+    Движок: <code>level 0..10</code>, «верно вовремя» → <code>+1</code>, ошибка → <code>0</code>.
+    Цвет — интерполяция «холодный→горячий» <b>без чистого красного</b> (чтобы не путать с ошибкой).
+    В приложении вешается на тип ответа: <code>fast</code> → нарастание, <code>wrong</code> → сброс.
+    <code>prefers-reduced-motion</code> отключает частицы/тряску, оставляя только смену цвета/свечения.
+  </p>
+</div>
+
+<script>
+(() => {
+  const MAX = 10;
+  const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const RAMP = ["#2f6df6", "#22d3ee", "#16a34a", "#f59e0b", "#f97316", "#ff2d95"];
+  const hexToRgb = (h) => [1,3,5].map((i) => parseInt(h.slice(i, i+2), 16));
+  const rgbToHex = (r) => "#" + r.map((v) => Math.max(0,Math.min(255,v|0)).toString(16).padStart(2,"0")).join("");
+  const mix = (a, b, t) => rgbToHex(hexToRgb(a).map((v,i) => v + (hexToRgb(b)[i]-v)*t));
+  const heat = (t) => { const s = Math.max(0,Math.min(1,t))*(RAMP.length-1); const i = Math.min(RAMP.length-2, Math.floor(s)); return mix(RAMP[i], RAMP[i+1], s-i); };
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const tier = (lv) => lv<=0?"—":lv<=2?"Разогрев":lv<=4?"Класс!":lv<=6?"Супер!":lv<=9?"Молния!":"Берсерк!";
+
+  function setupCanvas(canvas) {
+    const ctx = canvas.getContext("2d");
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+    let W = 0, H = 0;
+    const size = () => {
+      const r = canvas.parentElement.getBoundingClientRect();
+      W = r.width; H = r.height;
+      canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
+      canvas.style.width = W+"px"; canvas.style.height = H+"px";
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    };
+    size(); new ResizeObserver(size).observe(canvas.parentElement);
+    return { ctx, get W(){return W;}, get H(){return H;} };
+  }
+
+  function sparkle(ctx, x, y, s, color, alpha) {
+    ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(x, y, s*0.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = Math.max(1, s*0.25);
+    ctx.beginPath();
+    ctx.moveTo(x-s, y); ctx.lineTo(x+s, y); ctx.moveTo(x, y-s); ctx.lineTo(x, y+s);
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+
+  function drawLightning(ctx, cx, cy, level, color) {
+    ctx.globalAlpha = 0.85; ctx.strokeStyle = color; ctx.lineWidth = 1.7; ctx.shadowColor = color; ctx.shadowBlur = 10;
+    for (let k = 0; k < level - 6; k++) {
+      const a0 = Math.random()*Math.PI*2, rad = 72 + Math.random()*22;
+      ctx.beginPath(); ctx.moveTo(cx + Math.cos(a0)*rad, cy + Math.sin(a0)*rad);
+      for (let s = 0; s < 5; s++) { const a = a0 + (s+1)*0.22, rr = rad + rand(-16, 16); ctx.lineTo(cx + Math.cos(a)*rr, cy + Math.sin(a)*rr); }
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  document.querySelectorAll(".stage").forEach((stage) => {
+    const sig = stage.dataset.sig;
+    const cv = stage.querySelector("canvas");
+    const { ctx, ...dim } = setupCanvas(cv);
+    const card = stage.querySelector(".minicard");
+    const tierEl = stage.querySelector(".tier");
+    const panel = stage.closest(".panel");
+    const readEl = panel.querySelector(".level-read b");
+
+    let level = 0, shake = 0, tick = 0;
+    const rings = [], stars = [], halo = [];
+    const center = () => ({ x: dim.W/2, y: dim.H/2 });
+
+    const setStars = (n) => {
+      while (stars.length < n) stars.push({ ang: rand(0, Math.PI*2), r: rand(74, 88), spd: rand(0.012, 0.02), ph: rand(0, 6), sz: rand(5, 8) });
+      while (stars.length > n) stars.pop();
+    };
+
+    const render = (lv) => {
+      level = lv; readEl.textContent = lv;
+      const c = heat(lv / MAX);
+      tierEl.textContent = "Серия " + lv + (lv ? " · " + tier(lv) : "");
+      tierEl.style.color = lv ? c : "var(--muted)";
+      card.style.boxShadow = lv
+        ? `0 0 ${12 + lv*4}px ${lv}px ${c}55, 0 14px 30px -18px ${c}, 0 0 0 ${1 + lv*0.25}px ${c}`
+        : "0 14px 30px -18px rgba(47,109,246,.5), 0 0 0 1px rgba(0,0,0,.05)";
+      if (sig === "stars") setStars(lv >= 3 ? lv : 0);
+    };
+
+    const onHit = (lv) => {
+      const { x, y } = center();
+      if (!REDUCE) shake = Math.min(15, lv * 1.5);
+      // base + signature ring counts
+      let ringCount = 1;
+      if (sig === "rings") ringCount = lv >= 6 ? 3 : lv >= 3 ? 2 : 1;
+      for (let i = 0; i < ringCount; i++) rings.push({ x, y, r: 46 - i*14, life: 1, delay: i * 6 });
+      if (sig === "halo" && !REDUCE) { const burst = Math.min(18, 6 + lv); for (let i = 0; i < burst; i++) spawnHalo(lv); }
+    };
+
+    const spawnHalo = (lv) => {
+      if (halo.length >= 130) return; // hard cap: protect against burst+continuous pileup
+      const { x, y } = center();
+      const a = rand(0, Math.PI*2), r = rand(60, 80);
+      halo.push({ x: x + Math.cos(a)*r, y: y + Math.sin(a)*r,
+        vx: Math.cos(a)*rand(0.1, 0.5), vy: Math.sin(a)*rand(0.1, 0.5) - 0.2,
+        life: 1, fade: rand(0.012, 0.022), sz: rand(3, 6), color: heat(rand(0.2, 1)) });
+    };
+
+    const onMiss = () => { rings.length = 0; halo.length = 0; stars.length = 0; shake = 0; card.style.transform = "none"; };
+
+    const frame = () => {
+      tick++;
+      ctx.clearRect(0, 0, dim.W, dim.H);
+      const c = heat(level / MAX);
+      const { x: cx, y: cy } = center();
+      ctx.globalCompositeOperation = "lighter";
+
+      // signature: continuous halo (density bounded for steady performance)
+      if (sig === "halo") {
+        if (level > 0 && !REDUCE) {
+          const target = Math.min(96, level * 9); // steady particle count, scales with level
+          let budget = 3;                          // cap new particles per frame
+          while (halo.length < target && budget-- > 0) spawnHalo(level);
+        }
+        for (let i = halo.length - 1; i >= 0; i--) {
+          const p = halo[i]; p.x += p.vx; p.y += p.vy; p.life -= p.fade;
+          if (p.life <= 0) { halo.splice(i, 1); continue; }
+          sparkle(ctx, p.x, p.y, p.sz * p.life, p.color, Math.max(0, p.life));
+        }
+      }
+      // signature: orbiting stars
+      if (sig === "stars") {
+        for (const st of stars) {
+          st.ang += st.spd * (0.6 + level * 0.07);
+          const tw = 0.55 + 0.45 * Math.sin(tick * 0.15 + st.ph);
+          sparkle(ctx, cx + Math.cos(st.ang)*st.r, cy + Math.sin(st.ang)*st.r, st.sz, c, tw);
+        }
+      }
+      // base: pulse rings
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const r = rings[i];
+        if (r.delay > 0) { r.delay--; continue; }
+        r.r += 2.4 + level * 0.5; r.life -= 0.02;
+        if (r.life <= 0) { rings.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.max(0, r.life) * 0.5;
+        ctx.strokeStyle = c; ctx.lineWidth = 2 + level * 0.35;
+        ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.stroke();
+      }
+      // base: lightning from level 7
+      if (level >= 7 && !REDUCE) drawLightning(ctx, cx, cy, level, c);
+
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over";
+
+      if (shake > 0.2) { card.style.transform = `translate(${rand(-shake,shake)}px, ${rand(-shake,shake)}px)`; shake *= 0.82; }
+      else if (shake !== 0) { card.style.transform = "none"; shake = 0; }
+
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+
+    panel.querySelector(".ok").addEventListener("click", () => { level = Math.min(MAX, level + 1); render(level); onHit(level); });
+    panel.querySelector(".bad").addEventListener("click", () => { level = 0; render(0); onMiss(); });
+    render(0);
+  });
+})();
+</script>
+</body>
+</html>

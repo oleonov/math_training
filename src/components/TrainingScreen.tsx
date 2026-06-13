@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CircularTimer from "./CircularTimer";
-import { postJson, ApiError } from "@/lib/api-client";
-import type { AnswerResult, NextCard, SessionSummary, StartResult } from "@/lib/api-types";
+import StreakAura from "./StreakAura";
+import { ApiError } from "@/lib/api-client";
+import type { TrainingApi } from "@/lib/training-api";
+import type { NextCard, SessionSummary, StartResult } from "@/lib/api-types";
 
 type Kind = "fast" | "slow" | "wrong";
 
@@ -19,6 +21,7 @@ interface HistoryEntry {
 }
 
 interface Props {
+  api: TrainingApi;
   start: StartResult;
   onFinish: (summary: SessionSummary) => void;
 }
@@ -37,7 +40,7 @@ const FLASH_RING: Record<Kind, string> = {
   wrong: "ring-wrong",
 };
 
-export default function TrainingScreen({ start, onFinish }: Props) {
+export default function TrainingScreen({ api, start, onFinish }: Props) {
   const router = useRouter();
   const totalMs = start.durationSec * 1000;
 
@@ -52,6 +55,12 @@ export default function TrainingScreen({ start, onFinish }: Props) {
   const [timeUp, setTimeUp] = useState(false);
   const [timeLeftMs, setTimeLeftMs] = useState(totalMs);
   const [error, setError] = useState<string | null>(null);
+
+  // "Rage mode" streak: consecutive fast-and-on-time answers strengthen an aura
+  // around the card (0→10). A wrong answer resets it; a slow-but-correct answer
+  // keeps it where it is. `streakPulse` bumps on every fast answer to fire a burst.
+  const [streak, setStreak] = useState(0);
+  const [streakPulse, setStreakPulse] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const shownAtRef = useRef(0);
@@ -82,9 +91,7 @@ export default function TrainingScreen({ start, onFinish }: Props) {
   async function finish() {
     setFinishing(true);
     try {
-      const summary = await postJson<SessionSummary>("/api/session/finish", {
-        sessionId: start.sessionId,
-      });
+      const summary = await api.finish(start.sessionId);
       onFinish(summary);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return router.push("/login");
@@ -107,7 +114,7 @@ export default function TrainingScreen({ start, onFinish }: Props) {
     const answered = card; // capture the card being answered
 
     try {
-      const res = await postJson<AnswerResult>("/api/session/answer", {
+      const res = await api.answer({
         sessionId: start.sessionId,
         cardId: answered.cardId,
         shownA: answered.shownA,
@@ -137,6 +144,15 @@ export default function TrainingScreen({ start, onFinish }: Props) {
         ].slice(0, 12),
       );
       setFlash(kind);
+
+      // Update the streak/"rage mode". Fast → grow (and pulse a burst); wrong →
+      // reset; slow (correct but after the timer) → leave it untouched.
+      if (kind === "fast") {
+        setStreak((s) => Math.min(10, s + 1));
+        setStreakPulse((p) => p + 1);
+      } else if (kind === "wrong") {
+        setStreak(0);
+      }
 
       const next = res.next;
       window.setTimeout(() => {
@@ -226,7 +242,8 @@ export default function TrainingScreen({ start, onFinish }: Props) {
         ))}
       </div>
 
-      {/* Main card */}
+      {/* Main card, wrapped in the streak aura (glow + sparkles render behind it). */}
+      <StreakAura level={streak} pulseKey={streakPulse}>
       <div
         className={`flex flex-col gap-5 rounded-[2rem] bg-card px-4 py-8 shadow-xl shadow-brand/10 ring-1 transition sm:gap-7 sm:p-10 ${
           flash ? `ring-4 ${FLASH_RING[flash]}` : "ring-black/5"
@@ -285,6 +302,7 @@ export default function TrainingScreen({ start, onFinish }: Props) {
           </span>
         </div>
       </div>
+      </StreakAura>
 
       {/* Hints */}
       <div className="text-center text-base font-semibold text-muted">

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SettingsScreen from "./SettingsScreen";
 import TrainingScreen from "./TrainingScreen";
 import SummaryScreen from "./SummaryScreen";
 import { postJson, ApiError } from "@/lib/api-client";
+import { serverTrainingApi, type TrainingApi } from "@/lib/training-api";
+import { createGuestApi } from "@/lib/guest-engine";
 import type { SessionSummary, StartResult } from "@/lib/api-types";
 
 type Phase =
@@ -13,9 +15,17 @@ type Phase =
   | { name: "training"; start: StartResult }
   | { name: "summary"; summary: SessionSummary };
 
-export default function Trainer({ userName }: { userName: string }) {
+// `guest` swaps the server engine for a browser-only one (no persistence, records
+// in localStorage) and trims the header down (no server logout / memory reset).
+export default function Trainer({ userName, guest = false }: { userName?: string; guest?: boolean }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ name: "settings" });
+
+  // Stable engine for this mount. The guest engine holds in-tab state, so it must
+  // not be re-created on re-render.
+  const apiRef = useRef<TrainingApi | null>(null);
+  if (!apiRef.current) apiRef.current = guest ? createGuestApi() : serverTrainingApi;
+  const api = apiRef.current;
 
   // "Сбросить память" modal state.
   const [showReset, setShowReset] = useState(false);
@@ -25,15 +35,13 @@ export default function Trainer({ userName }: { userName: string }) {
   const [resetDone, setResetDone] = useState(false);
 
   async function startTraining(answerTimeLimitSec: number, trainingDurationMin: number) {
-    const start = await postJson<StartResult>("/api/session/start", {
-      answerTimeLimitSec,
-      trainingDurationMin,
-    });
+    const start = await api.start(answerTimeLimitSec, trainingDurationMin);
     setPhase({ name: "training", start });
   }
 
   async function logout() {
-    await postJson("/api/logout", {}).catch(() => {});
+    // Guests have no server session — just return to the login screen.
+    if (!guest) await postJson("/api/logout", {}).catch(() => {});
     router.push("/login");
     router.refresh();
   }
@@ -71,16 +79,20 @@ export default function Trainer({ userName }: { userName: string }) {
           <span className="hidden sm:inline">Таблица умножения</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <button
-            type="button"
-            onClick={openReset}
-            className="rounded-xl bg-white px-3 py-1.5 font-bold text-muted shadow ring-1 ring-black/5 transition hover:text-wrong active:scale-95"
-            title="Сбросить весь прогресс (по коду)"
-          >
-            <span className="sm:hidden">Сброс</span>
-            <span className="hidden sm:inline">Сбросить память</span>
-          </button>
-          <span className="hidden font-bold text-muted sm:inline">Привет, {userName}!</span>
+          {!guest && (
+            <button
+              type="button"
+              onClick={openReset}
+              className="rounded-xl bg-white px-3 py-1.5 font-bold text-muted shadow ring-1 ring-black/5 transition hover:text-wrong active:scale-95"
+              title="Сбросить весь прогресс (по коду)"
+            >
+              <span className="sm:hidden">Сброс</span>
+              <span className="hidden sm:inline">Сбросить память</span>
+            </button>
+          )}
+          <span className="hidden font-bold text-muted sm:inline">
+            {guest ? "Гость" : `Привет, ${userName}!`}
+          </span>
           <button
             type="button"
             onClick={logout}
@@ -101,6 +113,7 @@ export default function Trainer({ userName }: { userName: string }) {
         {phase.name === "settings" && <SettingsScreen onStart={startTraining} />}
         {phase.name === "training" && (
           <TrainingScreen
+            api={api}
             start={phase.start}
             onFinish={(summary) => setPhase({ name: "summary", summary })}
           />

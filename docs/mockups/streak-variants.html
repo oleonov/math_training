@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Режим серии — варианты эффекта</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-display: "Fredoka", system-ui, sans-serif;
+    --font-body: "Nunito", system-ui, sans-serif;
+    --ink: #1f2d3d;
+    --muted: #6b7c8f;
+    --brand: #2f6df6;
+    --brand-strong: #1d4ed8;
+    --brand-soft: #e6efff;
+    --correct: #16a34a;
+    --wrong: #ef4444;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background-color: #f4f8ff;
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, #dcebffcc 0%, transparent 55%),
+      radial-gradient(55rem 55rem at -10% 110%, #cdeafdcc 0%, transparent 55%),
+      radial-gradient(45rem 45rem at 50% 120%, #ffe6efcc 0%, transparent 50%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 80px;
+  }
+  .page { max-width: 1180px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; color: var(--brand-strong); margin: 0 0 6px; }
+  .lead { color: var(--muted); font-weight: 600; max-width: 820px; margin: 0 0 8px; line-height: 1.55; }
+  .lead b { color: var(--ink); }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 26px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: #ffffffcc; border-radius: 26px; padding: 20px 20px 22px;
+    box-shadow: 0 18px 40px -26px rgba(31,45,61,.4), 0 0 0 1px rgba(31,45,61,.06);
+    display: flex; flex-direction: column;
+  }
+  .panel h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0 0 2px; color: var(--ink); }
+  .panel .tech { font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.5; margin: 0 0 14px; }
+  .panel .tech b { color: var(--brand-strong); }
+
+  /* сцена с мини-карточкой */
+  .stage {
+    position: relative; height: 250px; border-radius: 20px; overflow: hidden;
+    background: #f3f7ff; display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(31,45,61,.05);
+  }
+  .stage canvas { position: absolute; inset: 0; pointer-events: none; }
+
+  .minicard {
+    position: relative; z-index: 2; background: var(--card); border-radius: 22px;
+    padding: 22px 26px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 14px 30px -18px rgba(47,109,246,.5), 0 0 0 1px rgba(0,0,0,.05);
+    transition: box-shadow .18s ease;
+  }
+  .minicard .eq { font-family: var(--font-display); font-weight: 600; font-size: 40px; line-height: 1; color: var(--ink); }
+  .minicard .eq .x { color: var(--muted); }
+  .minicard .ans {
+    min-width: 74px; height: 60px; padding: 0 10px; border: 3px solid var(--brand-soft); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 600; font-size: 36px; color: var(--brand-strong);
+  }
+
+  /* контролы */
+  .controls { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .level-read { font-family: var(--font-display); font-weight: 600; font-size: 14px; color: var(--muted); margin-right: auto; }
+  .level-read b { color: var(--ink); font-size: 17px; }
+  .btn {
+    border: 0; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    padding: 10px 14px; border-radius: 12px; transition: transform .08s ease, filter .15s ease;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn.ok { background: var(--correct); color: #fff; box-shadow: 0 8px 18px -8px rgba(22,163,74,.7); }
+  .btn.bad { background: #fff; color: var(--wrong); box-shadow: inset 0 0 0 2px #fecaca; }
+
+  /* ===== Вариант A — combo-метр + жар карточки ===== */
+  .a-meter { position: absolute; top: 16px; left: 16px; right: 16px; z-index: 3; }
+  .a-meter .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .a-meter .tag { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--muted); letter-spacing: .3px; }
+  .a-meter .mult { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
+  .a-bar { height: 10px; border-radius: 999px; background: #e3e9f5; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
+  .a-bar > i { display: block; height: 100%; width: 0; border-radius: 999px; transition: width .35s cubic-bezier(.34,1.4,.5,1), background-color .35s ease; }
+  .a-card.blazing::before {
+    content: ""; position: absolute; inset: -5px; border-radius: 26px; z-index: -1;
+    background: conic-gradient(from 0deg, #f59e0b, #ff2d95, #f97316, #ffd700, #f59e0b);
+    filter: blur(8px); animation: a-spin 1.1s linear infinite;
+  }
+  @keyframes a-spin { to { transform: rotate(360deg); } }
+  @keyframes a-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+
+  /* ===== Вариант B — огненный счётчик серии ===== */
+  .b-combo {
+    position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    transform-origin: center bottom;
+  }
+  .b-combo .num { font-family: var(--font-display); font-weight: 700; line-height: .9; }
+  .b-combo .lbl { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
+  .b-milestone {
+    position: absolute; z-index: 4; left: 50%; top: 28%; transform: translateX(-50%);
+    font-family: var(--font-display); font-weight: 700; font-size: 24px; white-space: nowrap;
+    opacity: 0; pointer-events: none;
+  }
+  .b-milestone.show { animation: b-pop 1s ease forwards; }
+  @keyframes b-pop {
+    0% { opacity: 0; transform: translate(-50%, 10px) scale(.7); }
+    25% { opacity: 1; transform: translate(-50%, -6px) scale(1.1); }
+    70% { opacity: 1; transform: translate(-50%, -14px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -34px) scale(1); }
+  }
+  @keyframes b-wobble { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+
+  /* ===== Вариант C — аура карточки ===== */
+  .c-stage .minicard { transition: box-shadow .18s ease; }
+  .c-tier {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3;
+    font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--muted);
+  }
+
+  /* ===== Вариант D — лесенка уровней + виньетка ===== */
+  .d-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 20px; transition: box-shadow .3s ease, opacity .3s; }
+  .d-speed { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .3s; mix-blend-mode: overlay; }
+  .d-ladder { position: absolute; z-index: 3; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column-reverse; gap: 5px; }
+  .d-pip { width: 12px; height: 12px; border-radius: 4px; background: #dde5f3; box-shadow: inset 0 0 0 1px rgba(0,0,0,.04); transition: background-color .2s ease, transform .2s ease, box-shadow .2s; }
+  .d-pip.on { transform: scale(1.12); }
+  .d-tier { position: absolute; z-index: 3; left: 14px; top: 14px; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--muted); transition: color .25s; }
+
+  .foot { margin-top: 28px; font-size: 13px; color: var(--muted); font-weight: 600; line-height: 1.6; max-width: 820px; }
+  .foot code { font-family: ui-monospace, Menlo, monospace; background: #eaf0fb; padding: 1px 6px; border-radius: 6px; color: var(--brand-strong); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Режим серии — варианты эффекта</h1>
+  <p class="lead">
+    Серия правильных <b>и вовремя</b> ответов «разогревает» экран: эффект нарастает по силе <b>от 1 до 10</b>.
+    Любая ошибка — серия сбрасывается в 0. Под каждым вариантом две кнопки: <b>«верно и вовремя»</b> (нарастить)
+    и <b>«ошибка»</b> (сброс). Жми несколько раз подряд, чтобы увидеть разгон.
+  </p>
+
+  <div class="grid">
+
+    <!-- ВАРИАНТ A -->
+    <div class="panel">
+      <h2>A · Combo-метр «Жар»</h2>
+      <p class="tech">Полоса-метр над карточкой + «жар» самой карточки. <b>Техника:</b> одна переменная <b>--t</b> задаёт
+        ширину и цвет полосы, цвет/радиус свечения карточки и скорость пульса; на 7+ включается анимированная
+        огненная рамка (conic-gradient). Без частиц — чистый CSS.</p>
+      <div class="stage" data-variant="a">
+        <div class="a-meter">
+          <div class="row"><span class="tag">СЕРИЯ</span><span class="mult">×1</span></div>
+          <div class="a-bar"><i></i></div>
+        </div>
+        <div class="minicard a-card"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+      </div>
+      <div class="controls">
+        <span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button>
+        <button class="btn bad">✗ Ошибка</button>
+      </div>
+    </div>
+
+    <!-- ВАРИАНТ B -->
+    <div class="panel">
+      <h2>B · Огненный счётчик серии</h2>
+      <p class="tech">Крупный счётчик «🔥 N», который растёт и покачивается, а за ним из <b>&lt;canvas&gt;</b> поднимается
+        пламя. <b>Техника:</b> частота эмиссии частиц ∝ уровню, режим <b>lighter</b> для свечения; на вехах 3/6/9 — поп
+        с названием тира. Самый «зомби-режим».</p>
+      <div class="stage" data-variant="b">
+        <canvas></canvas>
+        <div class="b-milestone"></div>
+        <div class="b-combo">
+          <span class="num" style="font-size:64px; color:var(--muted)">0</span>
+          <span class="lbl" style="color:var(--muted)">серия</span>
+        </div>
+      </div>
+      <div class="controls">
+        <span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button>
+        <button class="btn bad">✗ Ошибка</button>
+      </div>
+    </div>
+
+    <!-- ВАРИАНТ C -->
+    <div class="panel">
+      <h2>C · Аура карточки</h2>
+      <p class="tech">Эффект на самой карточке: расходящиеся пульс-кольца, а на высоких уровнях — электрические дуги и
+        тряска при каждом ударе. <b>Техника:</b> кольца и «молнии» на <b>&lt;canvas&gt;</b>, тряска — джиттер
+        <code>transform</code> с амплитудой ∝ уровню. Иммерсивно, без лишнего UI.</p>
+      <div class="stage c-stage" data-variant="c">
+        <canvas></canvas>
+        <div class="minicard"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+        <div class="c-tier">Серия 0</div>
+      </div>
+      <div class="controls">
+        <span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button>
+        <button class="btn bad">✗ Ошибка</button>
+      </div>
+    </div>
+
+    <!-- ВАРИАНТ D -->
+    <div class="panel">
+      <h2>D · Лесенка уровней + виньетка</h2>
+      <p class="tech">Явная шкала из 10 сегментов (видно точный прогресс 1→10) + цветная виньетка всей сцены и
+        «скоростные линии» на высоких тирах. <b>Техника:</b> сегменты и виньетка — CSS по уровню, спокойно и
+        читаемо. Хорошо для детей: понятно, «сколько до максимума».</p>
+      <div class="stage" data-variant="d">
+        <div class="d-vignette"></div>
+        <div class="d-speed"></div>
+        <div class="d-tier">Разогрев</div>
+        <div class="d-ladder"></div>
+        <div class="minicard"><div class="eq">7&nbsp;<span class="x">×</span>&nbsp;8&nbsp;=</div><div class="ans">56</div></div>
+      </div>
+      <div class="controls">
+        <span class="level-read">Сила: <b>0</b>/10</span>
+        <button class="btn ok">✓ Верно и вовремя</button>
+        <button class="btn bad">✗ Ошибка</button>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="foot">
+    Во всех вариантах «движок» один: состояние <code>level ∈ 0..10</code>, на «верно и вовремя» — <code>+1</code> (до 10),
+    на ошибку — <code>0</code>. Из <code>level</code> выводится <code>t = level/10</code>, цвет берётся интерполяцией
+    шкалы «холодный→горячий» (намеренно без чистого красного, чтобы не путать с ошибкой). В реальном экране это
+    подключается к результату ответа: <code>fast</code> → нарастание, <code>wrong</code> → сброс.
+    <code>prefers-reduced-motion</code> уважается (частицы/тряска отключаются).
+  </p>
+</div>
+
+<script>
+(() => {
+  const MAX = 10;
+  const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const RAMP = ["#2f6df6", "#22d3ee", "#16a34a", "#f59e0b", "#f97316", "#ff2d95"];
+  const hexToRgb = (h) => [1,3,5].map((i) => parseInt(h.slice(i, i+2), 16));
+  const rgbToHex = (r) => "#" + r.map((v) => Math.max(0,Math.min(255,v|0)).toString(16).padStart(2,"0")).join("");
+  const mix = (a, b, t) => rgbToHex(hexToRgb(a).map((v,i) => v + (hexToRgb(b)[i]-v)*t));
+  const heat = (t) => { // t 0..1
+    const s = Math.max(0, Math.min(1, t)) * (RAMP.length - 1);
+    const i = Math.min(RAMP.length - 2, Math.floor(s));
+    return mix(RAMP[i], RAMP[i+1], s - i);
+  };
+  const tier = (lv) =>
+    lv <= 0 ? "—" : lv <= 2 ? "Разогрев" : lv <= 4 ? "В ударе!" : lv <= 6 ? "В огне 🔥" : lv <= 8 ? "Молния ⚡" : "БЕРСЕРК 💥";
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function setupCanvas(canvas) {
+    const ctx = canvas.getContext("2d");
+    const DPR = Math.min(devicePixelRatio || 1, 2);
+    let W = 0, H = 0;
+    const size = () => {
+      const r = canvas.parentElement.getBoundingClientRect();
+      W = r.width; H = r.height;
+      canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+      canvas.style.width = W + "px"; canvas.style.height = H + "px";
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    };
+    size();
+    new ResizeObserver(size).observe(canvas.parentElement);
+    return { ctx, get W() { return W; }, get H() { return H; } };
+  }
+
+  // Wire the two buttons + the level readout for a panel.
+  function wire(stage, onHit, onMiss, render) {
+    const panel = stage.closest(".panel");
+    const readEl = panel.querySelector(".level-read b");
+    let level = 0;
+    const apply = () => { readEl.textContent = level; render(level); };
+    panel.querySelector(".ok").addEventListener("click", () => { level = Math.min(MAX, level + 1); onHit(level); apply(); });
+    panel.querySelector(".bad").addEventListener("click", () => { level = 0; onMiss(); apply(); });
+    apply();
+  }
+
+  /* ---------- A: combo-метр + жар ---------- */
+  (() => {
+    const stage = document.querySelector('[data-variant="a"]');
+    const bar = stage.querySelector(".a-bar > i");
+    const mult = stage.querySelector(".mult");
+    const card = stage.querySelector(".a-card");
+    wire(stage, () => {}, () => {}, (lv) => {
+      const t = lv / MAX, c = heat(t);
+      bar.style.width = (lv / MAX) * 100 + "%";
+      bar.style.background = c;
+      mult.textContent = "×" + (lv || 1);
+      mult.style.color = lv ? c : "var(--ink)";
+      card.style.boxShadow = lv
+        ? `0 0 ${10 + lv*5}px ${lv*1.5}px ${c}66, 0 14px 30px -18px ${c}, 0 0 0 ${1 + lv*0.3}px ${c}`
+        : "0 14px 30px -18px rgba(47,109,246,.5), 0 0 0 1px rgba(0,0,0,.05)";
+      card.style.animation = (lv >= 3 && !REDUCE) ? `a-pulse ${(1.25 - lv*0.08).toFixed(2)}s ease-in-out infinite` : "none";
+      card.classList.toggle("blazing", lv >= 7 && !REDUCE);
+    });
+  })();
+
+  /* ---------- B: огненный счётчик + пламя ---------- */
+  (() => {
+    const stage = document.querySelector('[data-variant="b"]');
+    const cv = stage.querySelector("canvas");
+    const { ctx, ...dim } = setupCanvas(cv);
+    const numEl = stage.querySelector(".num");
+    const lblEl = stage.querySelector(".lbl");
+    const combo = stage.querySelector(".b-combo");
+    const mileEl = stage.querySelector(".b-milestone");
+    let level = 0;
+    const parts = [];
+
+    const render = (lv) => {
+      level = lv;
+      const t = lv / MAX, c = heat(t);
+      numEl.textContent = lv ? "🔥 " + lv : "0";
+      numEl.style.color = lv ? c : "var(--muted)";
+      numEl.style.fontSize = (56 + lv * 4) + "px";
+      lblEl.style.color = lv ? c : "var(--muted)";
+      lblEl.textContent = lv ? tier(lv) : "серия";
+      combo.style.animation = (lv >= 4 && !REDUCE) ? `b-wobble ${(0.5 - lv*0.02).toFixed(2)}s ease-in-out infinite` : "none";
+    };
+    const onHit = (lv) => {
+      if (!REDUCE) for (let i = 0; i < 6 + lv * 3; i++) emit(lv);   // burst on hit
+      if (lv === 3 || lv === 6 || lv === 9) {                       // milestone
+        mileEl.textContent = tier(lv); mileEl.style.color = heat(lv / MAX);
+        mileEl.classList.remove("show"); void mileEl.offsetWidth; mileEl.classList.add("show");
+      }
+    };
+    const emit = (lv) => {
+      const cx = dim.W / 2;
+      parts.push({
+        x: cx + rand(-30 - lv*3, 30 + lv*3), y: dim.H * 0.62,
+        vx: rand(-0.4, 0.4), vy: rand(-1.4 - lv*0.18, -0.7 - lv*0.1),
+        life: 1, fade: rand(0.012, 0.025), size: rand(3, 6 + lv*0.5),
+      });
+    };
+    const frame = () => {
+      ctx.clearRect(0, 0, dim.W, dim.H);
+      if (level > 0 && !REDUCE) for (let i = 0; i < level; i++) if (Math.random() < 0.7) emit(level);
+      ctx.globalCompositeOperation = "lighter";
+      const c = heat(level / MAX);
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.x += p.vx; p.y += p.vy; p.vy *= 0.99; p.life -= p.fade;
+        if (p.life <= 0) { parts.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.max(0, p.life) * 0.9;
+        // hot core -> colored body as it cools
+        ctx.fillStyle = p.life > 0.7 ? "#fff8d8" : c;
+        ctx.shadowColor = c; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    wire(stage, onHit, () => { parts.length = 0; }, render);
+  })();
+
+  /* ---------- C: аура карточки (кольца + тряска + дуги) ---------- */
+  (() => {
+    const stage = document.querySelector('[data-variant="c"]');
+    const cv = stage.querySelector("canvas");
+    const { ctx, ...dim } = setupCanvas(cv);
+    const card = stage.querySelector(".minicard");
+    const tierEl = stage.querySelector(".c-tier");
+    let level = 0, shake = 0;
+    const rings = [];
+
+    const center = () => ({ x: dim.W / 2, y: dim.H / 2 });
+    const render = (lv) => {
+      level = lv;
+      const c = heat(lv / MAX);
+      tierEl.textContent = "Серия " + lv + (lv ? " · " + tier(lv) : "");
+      tierEl.style.color = lv ? c : "var(--muted)";
+      card.style.boxShadow = lv
+        ? `0 0 ${12 + lv*4}px ${lv}px ${c}55, 0 14px 30px -18px ${c}, 0 0 0 ${1 + lv*0.25}px ${c}`
+        : "0 14px 30px -18px rgba(47,109,246,.5), 0 0 0 1px rgba(0,0,0,.05)";
+    };
+    const onHit = (lv) => {
+      const { x, y } = center();
+      rings.push({ x, y, r: 50, life: 1 });
+      if (!REDUCE) shake = Math.min(14, lv * 1.4);
+    };
+    const frame = () => {
+      ctx.clearRect(0, 0, dim.W, dim.H);
+      const c = heat(level / MAX);
+      // expanding pulse rings
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const r = rings[i];
+        r.r += 2.2 + level * 0.5; r.life -= 0.02;
+        if (r.life <= 0) { rings.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.max(0, r.life) * 0.5;
+        ctx.strokeStyle = c; ctx.lineWidth = 2 + level * 0.3;
+        ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
+      }
+      // electric arcs around the card on high streaks
+      if (level >= 7 && !REDUCE) {
+        const { x, y } = center();
+        ctx.globalAlpha = 0.8; ctx.strokeStyle = c; ctx.lineWidth = 1.5; ctx.shadowColor = c; ctx.shadowBlur = 8;
+        for (let k = 0; k < (level - 6); k++) {
+          const a0 = Math.random() * Math.PI * 2, rad = 70 + Math.random() * 20;
+          ctx.beginPath();
+          let px = x + Math.cos(a0) * rad, py = y + Math.sin(a0) * rad;
+          ctx.moveTo(px, py);
+          for (let s = 0; s < 4; s++) {
+            const a = a0 + (s + 1) * 0.25, rr = rad + rand(-14, 14);
+            ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+          }
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+      // shake decay
+      if (shake > 0.2) {
+        card.style.transform = `translate(${rand(-shake,shake)}px, ${rand(-shake,shake)}px)`;
+        shake *= 0.82;
+      } else { card.style.transform = "none"; shake = 0; }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    wire(stage, onHit, () => { rings.length = 0; shake = 0; card.style.transform = "none"; }, render);
+  })();
+
+  /* ---------- D: лесенка + виньетка + скоростные линии ---------- */
+  (() => {
+    const stage = document.querySelector('[data-variant="d"]');
+    const ladder = stage.querySelector(".d-ladder");
+    const vign = stage.querySelector(".d-vignette");
+    const speed = stage.querySelector(".d-speed");
+    const tierEl = stage.querySelector(".d-tier");
+    const pips = [];
+    for (let i = 0; i < MAX; i++) { const p = document.createElement("div"); p.className = "d-pip"; ladder.appendChild(p); pips.push(p); }
+    wire(stage, () => {}, () => {}, (lv) => {
+      const t = lv / MAX, c = heat(t);
+      pips.forEach((p, i) => {
+        const on = i < lv;
+        p.classList.toggle("on", on);
+        p.style.background = on ? heat((i + 1) / MAX) : "#dde5f3";
+        p.style.boxShadow = on ? `0 0 8px ${heat((i+1)/MAX)}` : "inset 0 0 0 1px rgba(0,0,0,.04)";
+      });
+      tierEl.textContent = lv ? tier(lv) : "Разогрев";
+      tierEl.style.color = lv ? c : "var(--muted)";
+      vign.style.boxShadow = lv ? `inset 0 0 ${30 + lv*9}px ${6 + lv*3}px ${c}${lv >= 5 ? "55" : "33"}` : "none";
+      speed.style.opacity = lv >= 6 ? (lv - 5) / 5 : 0;
+      speed.style.background = `repeating-linear-gradient(90deg, ${c}00 0 14px, ${c}88 14px 15px)`;
+    });
+  })();
+})();
+</script>
+</body>
+</html>

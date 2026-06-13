@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { postJson, ApiError } from "@/lib/api-client";
 
@@ -73,6 +74,19 @@ export default function LoginPage() {
             {busy ? "Вход…" : "Войти"}
           </button>
         </form>
+
+        {/* Secondary entry: a guest can train without an account. Styled as a
+            plain underlined link (not a button) — progress isn't saved and there
+            are no fireworks history, only browser-local records. */}
+        <p className="mt-5 text-center text-sm text-muted">
+          Нет аккаунта?{" "}
+          <Link
+            href="/guest"
+            className="font-semibold text-brand underline decoration-2 underline-offset-4 transition hover:text-brand-strong"
+          >
+            Войти как гость
+          </Link>
+        </p>
       </div>
     </div>
   );
