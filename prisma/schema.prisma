@@ -1,0 +1,100 @@
+// Prisma schema for the multiplication trainer.
+// Local dev uses SQLite. To deploy on Postgres, change `provider` to "postgresql"
+// and point DATABASE_URL at the Postgres instance — application code is unchanged.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  stats    UserCardStats[]
+  attempts Attempt[]
+  sessions Session[]
+}
+
+// Canonical multiplication card: a <= b, both in 2..9. 3x8 and 8x3 share one card.
+model Card {
+  id     Int @id @default(autoincrement())
+  a      Int
+  b      Int
+  answer Int
+
+  stats    UserCardStats[]
+  attempts Attempt[]
+
+  @@unique([a, b])
+}
+
+model UserCardStats {
+  userId Int
+  cardId Int
+
+  attemptsCount     Int @default(0)
+  fastCorrectCount  Int @default(0)
+  slowCorrectCount  Int @default(0)
+  wrongCount        Int @default(0)
+
+  averageScore          Float @default(0) // running mean of all attempts, 0..1
+  recentAverageScore    Float @default(0) // EMA, 0..1
+  averageResponseTimeMs Float @default(0)
+
+  lastAskedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cardId])
+}
+
+model Attempt {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  cardId         Int
+  shownA         Int
+  shownB         Int
+  correctAnswer  Int
+  userAnswer     Int?
+  isCorrect      Boolean
+  isAfterTimeout Boolean
+  score          Float
+  responseTimeMs Int
+  sessionId      Int
+  createdAt      DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card    Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([userId, cardId])
+}
+
+model Session {
+  id                  Int       @id @default(autoincrement())
+  userId              Int
+  startedAt           DateTime  @default(now())
+  finishedAt          DateTime?
+  answerTimeLimitSec  Int
+  trainingDurationMin Int
+  totalAnswers        Int       @default(0)
+  averageScore        Float     @default(0)
+  fastCorrectCount    Int       @default(0)
+  slowCorrectCount    Int       @default(0)
+  wrongCount          Int       @default(0)
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempts Attempt[]
+
+  @@index([userId])
+}

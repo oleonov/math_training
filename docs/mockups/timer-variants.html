@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Полоса на всю ширину, время справа</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-display: "Fredoka", system-ui, sans-serif;
+    --font-body: "Nunito", system-ui, sans-serif;
+    --ink: #1f2d3d;
+    --muted: #6b7c8f;
+    --brand: #2f6df6;
+    --brand-strong: #1d4ed8;
+    --brand-soft: #e6efff;
+    --slow: #f59e0b;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background-color: #f4f8ff;
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, #dcebffcc 0%, transparent 55%),
+      radial-gradient(55rem 55rem at -10% 110%, #cdeafdcc 0%, transparent 55%),
+      radial-gradient(45rem 45rem at 50% 120%, #ffe6efcc 0%, transparent 50%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 64px;
+  }
+  .page { max-width: 920px; margin: 0 auto; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--brand-strong); margin: 0 0 6px; }
+  .lead { color: var(--muted); font-weight: 600; max-width: 720px; margin: 0 0 26px; line-height: 1.5; }
+  .desc { color: var(--muted); font-weight: 600; font-size: 14px; line-height: 1.55; margin: 16px 2px 0; max-width: 720px; }
+  .desc b { color: var(--brand-strong); }
+
+  /* видимая над клавиатурой зона */
+  .frame {
+    position: relative; border-radius: 24px; overflow: hidden; background: #eef4ff;
+    box-shadow: 0 20px 46px -18px rgba(31,45,61,.35), 0 0 0 1px rgba(31,45,61,.06);
+    height: 420px; display: flex; flex-direction: column; max-width: 620px;
+  }
+  .frame .viewport { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; padding: 22px; overflow: hidden; }
+  .keyboard { height: 140px; background: #c9ccd1; padding: 9px 12px 11px; }
+  .keyboard .krow { display:flex; gap:7px; margin-bottom:7px; }
+  .keyboard .krow:last-child { margin-bottom:0; }
+  .keyboard .key {
+    flex:1; height:28px; background:#f6f7f8; border-radius:7px; box-shadow:0 1px 0 rgba(0,0,0,.18);
+    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#3a3f44;
+  }
+  .keyboard .key.wide { flex: 2.4; }
+
+  /* ----- карточка ----- */
+  .card {
+    position: relative; width: 100%; max-width: 520px; background: var(--card);
+    border-radius: 30px; overflow: hidden;
+    box-shadow: 0 18px 40px -22px rgba(47,109,246,.45), 0 0 0 1px rgba(0,0,0,.05);
+    display: flex; flex-direction: column;
+  }
+  .main-row { display:flex; align-items:center; justify-content:center; gap:20px; padding: 26px 26px 18px; }
+  .eq { font-family: var(--font-display); font-weight: 600; font-size: 58px; line-height: 1; color: var(--ink); }
+  .eq .x { color: var(--muted); }
+  .answer {
+    width: 104px; height: 86px; border: 4px solid var(--brand-soft); border-radius: 18px; background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight: 600; font-size: 50px; color: var(--brand-strong);
+  }
+  .answer.empty::after { content:""; width:4px; height:50px; background:var(--brand); border-radius:2px; animation:caret 1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
+
+  .ring { position: relative; width: 84px; height: 84px; flex: none; }
+  .ring .num {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight: 600; font-size: 28px; color: var(--brand-strong);
+  }
+
+  /* === полоса на всю ширину, время справа === */
+  .bottom {
+    display:flex; align-items:center; gap:16px;
+    padding: 0 26px 22px;
+  }
+  .bottom .bar { flex:1; height:6px; border-radius:999px; background:var(--brand-soft); overflow:hidden; }
+  .bottom .bar > i { display:block; height:100%; border-radius:999px; background:var(--brand); transition:width .25s linear; }
+  .bottom .clock {
+    font-family: var(--font-display); font-weight: 600; font-size: 14px; line-height: 1;
+    color: var(--muted); white-space: nowrap; min-width: 42px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Полоса на всю ширину, время справа</h1>
+  <p class="lead">
+    Без слова «Осталось»: полоса до конца теста тянется на всю ширину карточки, а время‑цифры стоят справа.
+    Карточка всегда видна над клавиатурой — значит, и время до конца теста тоже. Таймер тикает вживую.
+  </p>
+
+  <div class="frame">
+    <div class="viewport">
+      <div class="card">
+        <div class="main-row">
+          <div class="ring" data-ring></div>
+          <div class="eq">5&nbsp;<span class="x">×</span>&nbsp;6&nbsp;=</div>
+          <div class="answer empty"></div>
+        </div>
+        <div class="bottom">
+          <div class="bar"><i data-bar></i></div>
+          <span class="clock" data-clock>2:37</span>
+        </div>
+      </div>
+    </div>
+    <div class="keyboard" data-kb></div>
+  </div>
+
+  <p class="desc">
+    Полоса — оставшаяся доля времени теста (сужается слева направо по мере убывания), справа точное
+    «M:SS». Слово «Осталось» убрано — полоса говорит сама за себя. По мере истечения времени полосу можно
+    подкрашивать в <b>оранжевый</b> на последней минуте — как кольцо примера, чтобы ребёнок поторопился.
+  </p>
+</div>
+
+<script>
+  const kbRows = [
+    ["1","2","3","4","5","6","7","8","9","0","—"],
+    ["@","#","№","₽","'","&","*","(",")",'"'],
+    ["%","-","_","+","=","/",";",":","!","?"],
+  ];
+  document.querySelectorAll("[data-kb]").forEach((kb) => {
+    kbRows.forEach((row) => {
+      const r = document.createElement("div"); r.className = "krow";
+      row.forEach((k) => { const key = document.createElement("div"); key.className = "key"; key.textContent = k; r.appendChild(key); });
+      kb.appendChild(r);
+    });
+    const r = document.createElement("div"); r.className = "krow";
+    r.innerHTML = '<div class="key" style="flex:.7">123</div><div class="key wide">пробел</div><div class="key" style="flex:.9">↵</div>';
+    kb.appendChild(r);
+  });
+
+  document.querySelectorAll("[data-ring]").forEach((el) => {
+    const size = 84, w = 11, r = (size - w) / 2, c = 2 * Math.PI * r, frac = 0.7;
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", size); svg.setAttribute("height", size); svg.style.transform = "rotate(-90deg)";
+    const track = document.createElementNS(ns, "circle");
+    track.setAttribute("cx", size/2); track.setAttribute("cy", size/2); track.setAttribute("r", r);
+    track.setAttribute("fill","none"); track.setAttribute("stroke","var(--brand-soft)"); track.setAttribute("stroke-width", w);
+    svg.appendChild(track);
+    const arc = document.createElementNS(ns, "circle");
+    arc.setAttribute("cx", size/2); arc.setAttribute("cy", size/2); arc.setAttribute("r", r);
+    arc.setAttribute("fill","none"); arc.setAttribute("stroke","var(--slow)"); arc.setAttribute("stroke-width", w);
+    arc.setAttribute("stroke-linecap","round"); arc.setAttribute("stroke-dasharray", c); arc.setAttribute("stroke-dashoffset", c*(1-frac));
+    svg.appendChild(arc);
+    el.appendChild(svg);
+    const num = document.createElement("div"); num.className = "num"; num.textContent = "12"; el.appendChild(num);
+  });
+
+  let left = 157; // 2:37
+  const TOTAL = 600;
+  function fmt(s) { return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+  function paint() {
+    const pct = (left / TOTAL) * 100;
+    document.querySelectorAll("[data-clock]").forEach((e) => (e.textContent = fmt(left)));
+    document.querySelectorAll("[data-bar]").forEach((e) => {
+      e.style.width = pct + "%";
+      e.style.background = left <= 60 ? "var(--slow)" : "var(--brand)";
+    });
+  }
+  paint();
+  setInterval(() => { left = left > 0 ? left - 1 : 157; paint(); }, 1000);
+</script>
+</body>
+</html>

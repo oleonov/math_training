@@ -1,0 +1,22 @@
+# Runs the trainer in a Node 20 container, bound to localhost only.
+# nginx on the host reverse-proxies math.pandorika-it.com -> 127.0.0.1:3000.
+# SESSION_SECRET is read from deploy/.env (created during setup).
+services:
+  mathcards:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: mathcards
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DATABASE_URL=file:/data/prod.db
+      - SESSION_SECRET=${SESSION_SECRET}
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - mathcards-data:/data
+
+volumes:
+  mathcards-data:

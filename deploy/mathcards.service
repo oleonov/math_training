@@ -1,0 +1,16 @@
+# systemd unit for the multiplication trainer.
+# Install: cp deploy/mathcards.service /etc/systemd/system/  &&  systemctl daemon-reload
+[Unit]
+Description=MathCards — multiplication trainer (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mathcards
+EnvironmentFile=/opt/mathcards/.env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
