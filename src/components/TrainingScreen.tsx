@@ -23,6 +23,7 @@ interface HistoryEntry {
 interface Props {
   api: TrainingApi;
   start: StartResult;
+  animationsEnabled: boolean;
   onFinish: (summary: SessionSummary) => void;
 }
 
@@ -40,7 +41,7 @@ const FLASH_RING: Record<Kind, string> = {
   wrong: "ring-wrong",
 };
 
-export default function TrainingScreen({ api, start, onFinish }: Props) {
+export default function TrainingScreen({ api, start, animationsEnabled, onFinish }: Props) {
   const router = useRouter();
   const totalMs = start.durationSec * 1000;
 
@@ -145,13 +146,15 @@ export default function TrainingScreen({ api, start, onFinish }: Props) {
       );
       setFlash(kind);
 
-      // Update the streak/"rage mode". Fast → grow (and pulse a burst); wrong →
-      // reset; slow (correct but after the timer) → leave it untouched.
-      if (kind === "fast") {
-        setStreak((s) => Math.min(10, s + 1));
-        setStreakPulse((p) => p + 1);
-      } else if (kind === "wrong") {
-        setStreak(0);
+      if (animationsEnabled) {
+        // Update the streak/"rage mode". Fast → grow (and pulse a burst); wrong →
+        // reset; slow (correct but after the timer) → leave it untouched.
+        if (kind === "fast") {
+          setStreak((s) => Math.min(10, s + 1));
+          setStreakPulse((p) => p + 1);
+        } else if (kind === "wrong") {
+          setStreak(0);
+        }
       }
 
       const next = res.next;
@@ -203,53 +206,13 @@ export default function TrainingScreen({ api, start, onFinish }: Props) {
   const recent = history.slice(0, 5);
   const timeFraction = Math.max(0, Math.min(1, timeLeftMs / totalMs));
   const secLeft = Math.ceil(timeLeftMs / 1000);
-
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      {/* Top bar: score + end button. The session countdown now lives inside the
-          card (bottom strip) so it stays visible when the on-screen keyboard
-          scrolls this row off the top on tablets. */}
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-sm font-semibold text-muted">
-          Ответов: {answered} · Балл: {avgPct}%
-        </span>
-        <button
-          type="button"
-          onClick={finish}
-          disabled={finishing}
-          className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-muted shadow ring-1 ring-black/5 transition hover:text-ink active:scale-95 disabled:opacity-60"
-        >
-          Завершить
-        </button>
-      </div>
-
-      {/* History of recent answers */}
-      <div className="flex min-h-9 flex-wrap items-center justify-center gap-2">
-        {recent.map((h) => (
-          <span
-            key={h.key}
-            className={`mc-pop rounded-full px-3.5 py-1.5 text-base font-bold ${KIND_STYLES[h.kind]}`}
-          >
-            {h.shownA} × {h.shownB} ={" "}
-            {h.kind === "wrong" ? (
-              <>
-                {h.userAnswer ?? "—"} ✗ <span className="opacity-70">→ {h.correctAnswer}</span>
-              </>
-            ) : (
-              h.correctAnswer
-            )}
-          </span>
-        ))}
-      </div>
-
-      {/* Main card, wrapped in the streak aura (glow + sparkles render behind it). */}
-      <StreakAura level={streak} pulseKey={streakPulse}>
-      <div
-        className={`flex flex-col gap-5 rounded-[2rem] bg-card px-4 py-8 shadow-xl shadow-brand/10 ring-1 transition sm:gap-7 sm:p-10 ${
-          flash ? `ring-4 ${FLASH_RING[flash]}` : "ring-black/5"
-        }`}
-      >
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-center sm:gap-10">
+  const cardPanel = (
+    <div
+      className={`flex flex-col gap-5 rounded-[2rem] bg-card px-4 py-8 shadow-xl shadow-brand/10 ring-1 sm:gap-7 sm:p-10 ${
+        animationsEnabled ? "transition" : ""
+      } ${flash ? `ring-4 ${FLASH_RING[flash]}` : "ring-black/5"}`}
+    >
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-center sm:gap-10">
         <CircularTimer
           durationSec={start.answerTimeLimitSec}
           active={timerActive}
@@ -282,27 +245,74 @@ export default function TrainingScreen({ api, start, onFinish }: Props) {
             className="w-40 rounded-2xl border-4 border-brand-soft bg-white py-1 text-center font-display text-7xl text-brand-strong caret-brand outline-none focus:border-brand sm:w-44 sm:text-8xl"
           />
         </form>
-        </div>
-
-        {/* Session countdown — kept inside the card so it stays on screen while
-            typing; the on-screen keyboard scrolls the page's top bar away.
-            Thin bar on the full width, compact time on the right (no label),
-            turning amber in the final minute to nudge a hurry. */}
-        <div className="flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-brand-soft">
-            <div
-              className={`h-full rounded-full transition-[width,background-color] duration-300 ease-linear ${
-                secLeft <= 60 ? "bg-slow" : "bg-brand"
-              }`}
-              style={{ width: `${timeFraction * 100}%` }}
-            />
-          </div>
-          <span className="font-display text-sm font-semibold leading-none tabular-nums text-muted">
-            {Math.floor(secLeft / 60)}:{String(secLeft % 60).padStart(2, "0")}
-          </span>
-        </div>
       </div>
-      </StreakAura>
+
+      {/* Session countdown — kept inside the card so it stays on screen while
+          typing; the on-screen keyboard scrolls the page's top bar away.
+          Thin bar on the full width, compact time on the right (no label),
+          turning amber in the final minute to nudge a hurry. */}
+      <div className="flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-brand-soft">
+          <div
+            className={`h-full rounded-full ${
+              animationsEnabled ? "transition-[width,background-color] duration-300 ease-linear" : ""
+            } ${secLeft <= 60 ? "bg-slow" : "bg-brand"}`}
+            style={{ width: `${timeFraction * 100}%` }}
+          />
+        </div>
+        <span className="font-display text-sm font-semibold leading-none tabular-nums text-muted">
+          {Math.floor(secLeft / 60)}:{String(secLeft % 60).padStart(2, "0")}
+        </span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+      {/* Top bar: score + end button. The session countdown now lives inside the
+          card (bottom strip) so it stays visible when the on-screen keyboard
+          scrolls this row off the top on tablets. */}
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm font-semibold text-muted">
+          Ответов: {answered} · Балл: {avgPct}%
+        </span>
+        <button
+          type="button"
+          onClick={finish}
+          disabled={finishing}
+          className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-muted shadow ring-1 ring-black/5 transition hover:text-ink active:scale-95 disabled:opacity-60"
+        >
+          Завершить
+        </button>
+      </div>
+
+      {/* History of recent answers */}
+      <div className="flex min-h-9 flex-wrap items-center justify-center gap-2">
+        {recent.map((h) => (
+          <span
+            key={h.key}
+            className={`${animationsEnabled ? "mc-pop" : ""} rounded-full px-3.5 py-1.5 text-base font-bold ${KIND_STYLES[h.kind]}`}
+          >
+            {h.shownA} × {h.shownB} ={" "}
+            {h.kind === "wrong" ? (
+              <>
+                {h.userAnswer ?? "—"} ✗ <span className="opacity-70">→ {h.correctAnswer}</span>
+              </>
+            ) : (
+              h.correctAnswer
+            )}
+          </span>
+        ))}
+      </div>
+
+      {/* Main card, optionally wrapped in the streak aura (glow + sparkles behind it). */}
+      {animationsEnabled ? (
+        <StreakAura level={streak} pulseKey={streakPulse}>
+          {cardPanel}
+        </StreakAura>
+      ) : (
+        cardPanel
+      )}
 
       {/* Hints */}
       <div className="text-center text-base font-semibold text-muted">

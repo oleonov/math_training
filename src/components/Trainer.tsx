@@ -12,8 +12,8 @@ import type { SessionSummary, StartResult } from "@/lib/api-types";
 
 type Phase =
   | { name: "settings" }
-  | { name: "training"; start: StartResult }
-  | { name: "summary"; summary: SessionSummary };
+  | { name: "training"; start: StartResult; animationsEnabled: boolean }
+  | { name: "summary"; summary: SessionSummary; animationsEnabled: boolean };
 
 // `guest` swaps the server engine for a browser-only one (no persistence, records
 // in localStorage) and trims the header down (no server logout / memory reset).
@@ -34,9 +34,13 @@ export default function Trainer({ userName, guest = false }: { userName?: string
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
 
-  async function startTraining(answerTimeLimitSec: number, trainingDurationMin: number) {
+  async function startTraining(
+    answerTimeLimitSec: number,
+    trainingDurationMin: number,
+    animationsEnabled: boolean,
+  ) {
     const start = await api.start(answerTimeLimitSec, trainingDurationMin);
-    setPhase({ name: "training", start });
+    setPhase({ name: "training", start, animationsEnabled });
   }
 
   async function logout() {
@@ -115,12 +119,16 @@ export default function Trainer({ userName, guest = false }: { userName?: string
           <TrainingScreen
             api={api}
             start={phase.start}
-            onFinish={(summary) => setPhase({ name: "summary", summary })}
+            animationsEnabled={phase.animationsEnabled}
+            onFinish={(summary) =>
+              setPhase({ name: "summary", summary, animationsEnabled: phase.animationsEnabled })
+            }
           />
         )}
         {phase.name === "summary" && (
           <SummaryScreen
             summary={phase.summary}
+            animationsEnabled={phase.animationsEnabled}
             onRestart={() => setPhase({ name: "settings" })}
           />
         )}

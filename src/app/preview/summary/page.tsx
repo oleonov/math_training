@@ -32,7 +32,12 @@ export default function PreviewSummaryPage() {
   const [runKey, setRunKey] = useState(0);
   return (
     <div className="min-h-dvh px-4 py-8">
-      <SummaryScreen key={runKey} summary={MOCK} onRestart={() => setRunKey((k) => k + 1)} />
+      <SummaryScreen
+        key={runKey}
+        summary={MOCK}
+        animationsEnabled
+        onRestart={() => setRunKey((k) => k + 1)}
+      />
     </div>
   );
 }

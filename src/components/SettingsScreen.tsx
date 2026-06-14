@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ANSWER_TIME_LIMITS_SEC,
   TRAINING_DURATIONS_MIN,
@@ -9,8 +9,14 @@ import {
 } from "@/lib/config";
 
 interface Props {
-  onStart: (answerTimeLimitSec: number, trainingDurationMin: number) => Promise<void>;
+  onStart: (
+    answerTimeLimitSec: number,
+    trainingDurationMin: number,
+    animationsEnabled: boolean,
+  ) => Promise<void>;
 }
+
+const ANIMATIONS_PREF_KEY = "mathcards:animations-enabled";
 
 function Choice({
   label,
@@ -56,14 +62,34 @@ function Choice({
 export default function SettingsScreen({ onStart }: Props) {
   const [limit, setLimit] = useState<number>(DEFAULT_ANSWER_TIME_LIMIT_SEC);
   const [duration, setDuration] = useState<number>(DEFAULT_TRAINING_DURATION_MIN);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(ANIMATIONS_PREF_KEY);
+      if (saved === "0") setAnimationsEnabled(false);
+      if (saved === "1") setAnimationsEnabled(true);
+    } catch {
+      // Ignore storage failures; the per-session default is animations on.
+    }
+  }, []);
+
+  function changeAnimations(enabled: boolean) {
+    setAnimationsEnabled(enabled);
+    try {
+      window.localStorage.setItem(ANIMATIONS_PREF_KEY, enabled ? "1" : "0");
+    } catch {
+      // The setting still applies to this session even if persistence is blocked.
+    }
+  }
 
   async function start() {
     setBusy(true);
     setError(null);
     try {
-      await onStart(limit, duration);
+      await onStart(limit, duration, animationsEnabled);
     } catch {
       setError("Не получилось начать. Попробуй ещё раз.");
       setBusy(false);
@@ -92,13 +118,39 @@ export default function SettingsScreen({ onStart }: Props) {
         />
       </div>
 
+      <label className="mt-6 inline-flex cursor-pointer items-center gap-3 text-lg font-extrabold text-ink sm:mt-7 sm:text-xl">
+        <input
+          type="checkbox"
+          checked={animationsEnabled}
+          onChange={(e) => changeAnimations(e.target.checked)}
+          className="peer sr-only"
+        />
+        <span
+          aria-hidden
+          className="grid h-7 w-7 place-items-center rounded-lg border-2 border-brand-soft bg-white text-transparent shadow-sm transition peer-checked:border-brand peer-checked:bg-brand peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-brand/20 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="4"
+          >
+            <path d="M5 12.5l4.2 4.2L19 7" />
+          </svg>
+        </span>
+        <span>Включить анимации</span>
+      </label>
+
       {error && <p className="mt-5 text-center font-semibold text-wrong">{error}</p>}
 
       <button
         type="button"
         onClick={start}
         disabled={busy}
-        className="mt-8 w-full rounded-2xl bg-brand py-4 font-display text-2xl text-white shadow-lg shadow-brand/30 transition hover:bg-brand-strong active:scale-[0.98] disabled:opacity-60"
+        className="mt-10 w-full rounded-2xl bg-brand py-4 font-display text-2xl text-white shadow-lg shadow-brand/30 transition hover:bg-brand-strong active:scale-[0.98] disabled:opacity-60 sm:mt-12"
       >
         {busy ? "Загрузка…" : "Начать тренировку"}
       </button>

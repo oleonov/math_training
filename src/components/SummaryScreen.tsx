@@ -5,6 +5,7 @@ import Celebration from "./Celebration";
 
 interface Props {
   summary: SessionSummary;
+  animationsEnabled: boolean;
   onRestart: () => void;
 }
 
@@ -51,21 +52,21 @@ function CardList({
   );
 }
 
-export default function SummaryScreen({ summary, onRestart }: Props) {
+export default function SummaryScreen({ summary, animationsEnabled, onRestart }: Props) {
   const avgPct = Math.round(summary.averageScore * 100);
   const prevPct =
     summary.previousBestScore === null ? null : Math.round(summary.previousBestScore * 100);
 
   return (
-    <div className="mc-rise mx-auto w-full max-w-2xl space-y-5">
-      {summary.isNewRecord && <Celebration />}
+    <div className={`${animationsEnabled ? "mc-rise" : ""} mx-auto w-full max-w-2xl space-y-5`}>
+      {animationsEnabled && summary.isNewRecord && <Celebration />}
       <div className="rounded-[2rem] bg-card p-7 text-center shadow-xl shadow-brand/10 ring-1 ring-black/5 sm:p-9">
         <h1 className="font-display text-4xl text-ink">Готово! 🎉</h1>
         <p className="mt-1 text-muted">Средний балл за тренировку</p>
         <div className="my-2 font-display text-7xl text-brand-strong">{avgPct}%</div>
 
         {summary.isNewRecord && (
-          <div className="mc-badge mx-auto inline-flex items-center gap-2 rounded-full px-4 py-2 font-display text-lg font-bold text-[#5b3b00] shadow-lg">
+          <div className={`${animationsEnabled ? "mc-badge" : ""} mx-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-[#ffd700] to-[#f59e0b] px-4 py-2 font-display text-lg font-bold text-[#5b3b00] shadow-lg`}>
             🏆 Новый рекорд!
             {prevPct !== null && <span className="font-semibold opacity-75">было {prevPct}%</span>}
           </div>
