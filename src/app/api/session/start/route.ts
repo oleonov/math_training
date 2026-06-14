@@ -10,6 +10,7 @@ export async function POST(req: Request) {
       userId,
       toNumberOrNull(body.answerTimeLimitSec) ?? 0,
       toNumberOrNull(body.trainingDurationMin) ?? 0,
+      Array.isArray(body.numbers) ? body.numbers : [],
     );
     return NextResponse.json(result);
   } catch (e) {

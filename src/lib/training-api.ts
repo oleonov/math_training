@@ -18,15 +18,24 @@ export interface AnswerRequest {
 }
 
 export interface TrainingApi {
-  start(answerTimeLimitSec: number, trainingDurationMin: number): Promise<StartResult>;
+  /** `numbers` are the selected tables (2..9); empty means "all tables". */
+  start(
+    answerTimeLimitSec: number,
+    trainingDurationMin: number,
+    numbers: number[],
+  ): Promise<StartResult>;
   answer(input: AnswerRequest): Promise<AnswerResult>;
   finish(sessionId: number): Promise<SessionSummary>;
 }
 
 /** Server-backed engine: plain calls to the existing API routes. */
 export const serverTrainingApi: TrainingApi = {
-  start: (answerTimeLimitSec, trainingDurationMin) =>
-    postJson<StartResult>("/api/session/start", { answerTimeLimitSec, trainingDurationMin }),
+  start: (answerTimeLimitSec, trainingDurationMin, numbers) =>
+    postJson<StartResult>("/api/session/start", {
+      answerTimeLimitSec,
+      trainingDurationMin,
+      numbers,
+    }),
   answer: (input) => postJson<AnswerResult>("/api/session/answer", input),
   finish: (sessionId) => postJson<SessionSummary>("/api/session/finish", { sessionId }),
 };

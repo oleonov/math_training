@@ -87,6 +87,7 @@ model Session {
   finishedAt          DateTime?
   answerTimeLimitSec  Int
   trainingDurationMin Int
+  numbers             String? // selected tables as "5,8"; null = all tables
   totalAnswers        Int       @default(0)
   averageScore        Float     @default(0)
   fastCorrectCount    Int       @default(0)

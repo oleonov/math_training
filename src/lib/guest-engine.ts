@@ -12,7 +12,7 @@ import { evaluateAnswer } from "./scoring";
 import { updateStats } from "./stats";
 import { pickNextCard, orient, overdueScore, type CardWithStats } from "./selection";
 import { isNewRecord } from "./records";
-import { generateCards } from "./cards";
+import { generateCards, filterCardsByNumbers, normalizeNumbers } from "./cards";
 import {
   ANSWER_TIME_LIMITS_SEC,
   TRAINING_DURATIONS_MIN,
@@ -59,6 +59,7 @@ interface GuestSession {
   wrongCount: number;
   averageScore: number;
   recentCardIds: number[]; // most-recent first, capped at ANTI_REPEAT_WINDOW
+  pool: CardWithStats[]; // the cards this session draws from (filtered by tables)
 }
 
 /**
@@ -79,8 +80,8 @@ export function createGuestApi(): TrainingApi {
 
   let session: GuestSession | null = null;
 
-  function chooseNext(recentCardIds: number[], isFirst: boolean): NextCard {
-    const card = pickNextCard(cards, recentCardIds, new Date(), rng);
+  function chooseNext(pool: CardWithStats[], recentCardIds: number[], isFirst: boolean): NextCard {
+    const card = pickNextCard(pool, recentCardIds, new Date(), rng);
     const [shownA, shownB] = orient(card.a, card.b, rng());
     return {
       cardId: card.cardId,
@@ -92,13 +93,16 @@ export function createGuestApi(): TrainingApi {
   }
 
   return {
-    async start(answerTimeLimitSec, trainingDurationMin) {
+    async start(answerTimeLimitSec, trainingDurationMin, numbers) {
       if (!ANSWER_TIME_LIMITS_SEC.includes(answerTimeLimitSec as never)) {
         throw new Error("Invalid answerTimeLimitSec");
       }
       if (!TRAINING_DURATIONS_MIN.includes(trainingDurationMin as never)) {
         throw new Error("Invalid trainingDurationMin");
       }
+      // Draw only from the selected tables; empty/all uses the whole deck. The
+      // pool holds references into `cards`, so stats still accumulate per-card.
+      const pool = filterCardsByNumbers(cards, normalizeNumbers(numbers));
       session = {
         answerTimeLimitSec,
         trainingDurationMin,
@@ -108,12 +112,13 @@ export function createGuestApi(): TrainingApi {
         wrongCount: 0,
         averageScore: 0,
         recentCardIds: [],
+        pool,
       };
       return {
         sessionId: 1, // synthetic: only one guest session is live at a time
         answerTimeLimitSec,
         durationSec: trainingDurationMin * 60,
-        card: chooseNext([], true),
+        card: chooseNext(pool, [], true),
       };
     },
 
@@ -158,7 +163,7 @@ export function createGuestApi(): TrainingApi {
           score: ev.score,
           correctAnswer,
         },
-        next: chooseNext(session.recentCardIds, false),
+        next: chooseNext(session.pool, session.recentCardIds, false),
       };
     },
 

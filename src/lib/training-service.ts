@@ -8,6 +8,7 @@ import {
   overdueScore,
   type CardWithStats,
 } from "./selection";
+import { filterCardsByNumbers, normalizeNumbers, parseNumbers, serializeNumbers } from "./cards";
 import { HttpError } from "./http";
 import { isNewRecord } from "./records";
 import {
@@ -85,6 +86,7 @@ export async function startSession(
   userId: number,
   answerTimeLimitSec: number,
   trainingDurationMin: number,
+  numbers: number[],
   prisma: PrismaClient = defaultPrisma,
 ): Promise<StartResult> {
   if (!ANSWER_TIME_LIMITS_SEC.includes(answerTimeLimitSec as never)) {
@@ -94,11 +96,18 @@ export async function startSession(
     throw new HttpError(400, "Invalid trainingDurationMin");
   }
 
+  // The selected tables (2..9); empty/all is stored as null and skips filtering.
+  const selectedNumbers = normalizeNumbers(numbers);
   const session = await prisma.session.create({
-    data: { userId, answerTimeLimitSec, trainingDurationMin },
+    data: {
+      userId,
+      answerTimeLimitSec,
+      trainingDurationMin,
+      numbers: serializeNumbers(selectedNumbers),
+    },
   });
 
-  const items = await loadCardsWithStats(prisma, userId);
+  const items = filterCardsByNumbers(await loadCardsWithStats(prisma, userId), selectedNumbers);
   return {
     sessionId: session.id,
     answerTimeLimitSec,
@@ -187,7 +196,11 @@ export async function recordAnswer(
     select: { cardId: true },
   });
   const recentCardIds = recentAttempts.map((a) => a.cardId);
-  const items = await loadCardsWithStats(prisma, userId);
+  // Pick the next card from the SAME subset of tables this session was started with.
+  const items = filterCardsByNumbers(
+    await loadCardsWithStats(prisma, userId),
+    parseNumbers(session.numbers),
+  );
 
   return {
     result: {

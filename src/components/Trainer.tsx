@@ -37,9 +37,10 @@ export default function Trainer({ userName, guest = false }: { userName?: string
   async function startTraining(
     answerTimeLimitSec: number,
     trainingDurationMin: number,
+    numbers: number[],
     animationsEnabled: boolean,
   ) {
-    const start = await api.start(answerTimeLimitSec, trainingDurationMin);
+    const start = await api.start(answerTimeLimitSec, trainingDurationMin, numbers);
     setPhase({ name: "training", start, animationsEnabled });
   }
 

@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { generateCards, canonical } from "./cards";
+import {
+  generateCards,
+  canonical,
+  SELECTABLE_NUMBERS,
+  normalizeNumbers,
+  isAllNumbers,
+  filterCardsByNumbers,
+  serializeNumbers,
+  parseNumbers,
+} from "./cards";
 
 describe("canonical", () => {
   it("orders a pair so the smaller factor comes first", () => {
@@ -45,5 +54,68 @@ describe("generateCards", () => {
   it("has no duplicate pairs", () => {
     const keys = cards.map((c) => `${c.a}x${c.b}`);
     expect(new Set(keys).size).toBe(cards.length);
+  });
+});
+
+describe("normalizeNumbers", () => {
+  it("keeps only unique, sorted integers within 2..9", () => {
+    expect(normalizeNumbers([8, 5, 5, 8])).toEqual([5, 8]);
+    expect(normalizeNumbers(["3", 7, 3])).toEqual([3, 7]);
+  });
+
+  it("drops out-of-range, non-numeric and non-array input", () => {
+    expect(normalizeNumbers([1, 10, 0, 9])).toEqual([9]);
+    expect(normalizeNumbers(["x", null, undefined, 4])).toEqual([4]);
+    expect(normalizeNumbers("nope")).toEqual([]);
+    expect(normalizeNumbers(undefined)).toEqual([]);
+  });
+});
+
+describe("isAllNumbers", () => {
+  it("treats empty or full selections as 'all'", () => {
+    expect(isAllNumbers([])).toBe(true);
+    expect(isAllNumbers([...SELECTABLE_NUMBERS])).toBe(true);
+  });
+
+  it("is false for a partial selection", () => {
+    expect(isAllNumbers([5, 8])).toBe(false);
+  });
+});
+
+describe("filterCardsByNumbers", () => {
+  const cards = generateCards();
+
+  it("returns the full deck for empty/all selections", () => {
+    expect(filterCardsByNumbers(cards, [])).toHaveLength(36);
+    expect(filterCardsByNumbers(cards, [...SELECTABLE_NUMBERS])).toHaveLength(36);
+  });
+
+  it("keeps a card when either factor is selected", () => {
+    const fives = filterCardsByNumbers(cards, [5]);
+    expect(fives.every((c) => c.a === 5 || c.b === 5)).toBe(true);
+    // The 5-times table: 5×5..5×9 plus 2×5,3×5,4×5 — eight cards.
+    expect(fives).toHaveLength(8);
+  });
+
+  it("unions the selected tables (5 and 8)", () => {
+    const picked = filterCardsByNumbers(cards, [5, 8]);
+    expect(picked.every((c) => c.a === 5 || c.b === 5 || c.a === 8 || c.b === 8)).toBe(true);
+    // 8 (fives) + 8 (eights) − 1 (the shared 5×8 card) = 15.
+    expect(picked).toHaveLength(15);
+  });
+
+  it("never returns an empty result", () => {
+    expect(filterCardsByNumbers(cards, [7]).length).toBeGreaterThan(0);
+  });
+});
+
+describe("serializeNumbers / parseNumbers", () => {
+  it("stores null for empty/all and round-trips a partial selection", () => {
+    expect(serializeNumbers([])).toBeNull();
+    expect(serializeNumbers([...SELECTABLE_NUMBERS])).toBeNull();
+    expect(serializeNumbers([5, 8])).toBe("5,8");
+    expect(parseNumbers("5,8")).toEqual([5, 8]);
+    expect(parseNumbers(null)).toEqual([]);
+    expect(parseNumbers(undefined)).toEqual([]);
   });
 });
