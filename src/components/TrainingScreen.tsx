@@ -238,11 +238,15 @@ export default function TrainingScreen({ api, start, animationsEnabled, onFinish
             pattern="[0-9]*"
             autoComplete="off"
             aria-label="Ответ"
+            // On a retry (the previous answer was wrong) the box shows the correct
+            // answer as a faint grey hint, so a child who misses the row of recent
+            // answers above still sees what to type. It vanishes as they type.
+            placeholder={retry ? String(card.shownA * card.shownB) : undefined}
             // Intentionally never disabled/readOnly during the transition: on
             // iOS/iPadOS losing focus (or disabling) dismisses the on-screen
             // keyboard, and a programmatic refocus afterwards won't reopen it.
             // Double-submit is prevented by submittingRef in submit()/handleChange.
-            className="w-40 rounded-2xl border-4 border-brand-soft bg-white py-1 text-center font-display text-7xl text-brand-strong caret-brand outline-none focus:border-brand sm:w-44 sm:text-8xl"
+            className="w-40 rounded-2xl border-4 border-brand-soft bg-white py-1 text-center font-display text-7xl text-brand-strong caret-brand outline-none placeholder:text-muted/25 focus:border-brand sm:w-44 sm:text-8xl"
           />
         </form>
       </div>
