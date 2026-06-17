@@ -22,6 +22,7 @@ function stats(overrides: Partial<CardStats>): CardStats {
     averageScore: 0.5,
     recentAverageScore: 0.5,
     averageResponseTimeMs: 2000,
+    solvedUnaided: false,
     lastAskedAt: now,
     ...overrides,
   };

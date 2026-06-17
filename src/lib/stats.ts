@@ -10,6 +10,8 @@ export interface CardStats {
   averageScore: number; // running mean over all attempts, 0..1
   recentAverageScore: number; // EMA, 0..1
   averageResponseTimeMs: number; // running mean
+  /** True once the card was answered correctly without a hint (sticky). */
+  solvedUnaided: boolean;
   lastAskedAt: Date | null;
 }
 
@@ -18,6 +20,9 @@ export interface AttemptOutcome {
   isCorrect: boolean;
   isAfterTimeout: boolean;
   responseTimeMs: number;
+  /** The correct answer was shown as a hint for this attempt (a retry after a
+   *  previous mistake). A correct answer while hinted does NOT count as mastery. */
+  hinted: boolean;
 }
 
 /**
@@ -47,6 +52,10 @@ export function updateStats(
   const fast = outcome.isCorrect && !outcome.isAfterTimeout;
   const slow = outcome.isCorrect && outcome.isAfterTimeout;
 
+  // Sticky: once a card has been solved unaided, it stays "освоено" forever.
+  const solvedUnaided =
+    (prev?.solvedUnaided ?? false) || (outcome.isCorrect && !outcome.hinted);
+
   return {
     attemptsCount: newCount,
     fastCorrectCount: (prev?.fastCorrectCount ?? 0) + (fast ? 1 : 0),
@@ -55,6 +64,7 @@ export function updateStats(
     averageScore,
     recentAverageScore,
     averageResponseTimeMs,
+    solvedUnaided,
     lastAskedAt: askedAt,
   };
 }

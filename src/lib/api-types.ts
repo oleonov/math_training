@@ -42,6 +42,8 @@ export interface MasteryEntry {
   b: number;
   recentAverageScore: number; // EMA, 0..1
   attempts: number;
+  /** Answered correctly at least once without a hint — drives the "освоено" count. */
+  solvedUnaided: boolean;
 }
 
 export interface SessionSummary {

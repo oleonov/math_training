@@ -122,6 +122,10 @@ export default function TrainingScreen({ api, start, animationsEnabled, onFinish
         shownB: answered.shownB,
         userAnswer,
         responseTimeMs,
+        // `retry` is set after a wrong answer, when the box shows the correct
+        // answer as a faint hint. A correct answer here is "with a hint" and
+        // must NOT count toward "освоено".
+        hinted: retry,
       });
 
       const kind: Kind = res.result.isCorrect

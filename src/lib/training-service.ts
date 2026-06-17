@@ -35,6 +35,7 @@ type StatsRow = {
   averageScore: number;
   recentAverageScore: number;
   averageResponseTimeMs: number;
+  solvedUnaided: boolean;
   lastAskedAt: Date | null;
 };
 
@@ -48,6 +49,7 @@ function toCardStats(row: StatsRow | null | undefined): CardStats | null {
     averageScore: row.averageScore,
     recentAverageScore: row.recentAverageScore,
     averageResponseTimeMs: row.averageResponseTimeMs,
+    solvedUnaided: row.solvedUnaided,
     lastAskedAt: row.lastAskedAt,
   };
 }
@@ -124,6 +126,8 @@ export interface AnswerInput {
   shownB: number;
   userAnswer: number | null;
   responseTimeMs: number;
+  /** The correct answer was shown as a hint (a retry after a previous mistake). */
+  hinted: boolean;
 }
 
 export async function recordAnswer(
@@ -169,7 +173,11 @@ export async function recordAnswer(
   const prevRow = await prisma.userCardStats.findUnique({
     where: { userId_cardId: { userId, cardId: card.id } },
   });
-  const next = updateStats(toCardStats(prevRow), { ...ev, responseTimeMs: input.responseTimeMs }, now);
+  const next = updateStats(
+    toCardStats(prevRow),
+    { ...ev, responseTimeMs: input.responseTimeMs, hinted: input.hinted },
+    now,
+  );
   await prisma.userCardStats.upsert({
     where: { userId_cardId: { userId, cardId: card.id } },
     create: { userId, cardId: card.id, ...next },
@@ -262,6 +270,7 @@ export async function finishSession(
       b: c.b,
       recentAverageScore: s?.recentAverageScore ?? 0,
       attempts: s?.attemptsCount ?? 0,
+      solvedUnaided: s?.solvedUnaided ?? false,
     };
   });
 

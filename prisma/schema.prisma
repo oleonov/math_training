@@ -49,6 +49,11 @@ model UserCardStats {
   recentAverageScore    Float @default(0) // EMA, 0..1
   averageResponseTimeMs Float @default(0)
 
+  // Sticky flag: the card was answered correctly at least once WITHOUT a hint
+  // (i.e. solved on a first try, not on a post-mistake retry). Never unset.
+  // Drives the "освоено N / 64" counter on the results screen.
+  solvedUnaided Boolean @default(false)
+
   lastAskedAt DateTime?
   updatedAt   DateTime  @updatedAt
 

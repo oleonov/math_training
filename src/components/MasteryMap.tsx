@@ -45,10 +45,11 @@ function cellColor(score: number, attempts: number): string {
   return rgb(mix(heat(score), PALE, (1 - confidence) * 0.55));
 }
 
-// A card counts as "освоено" when it's recently strong AND actually practised.
-const MASTERY_THRESHOLD = 0.8;
-const isMastered = (e: MasteryEntry) =>
-  e.attempts >= 2 && e.recentAverageScore >= MASTERY_THRESHOLD;
+// A card counts as "освоено" once it has been answered correctly at least once
+// WITHOUT a hint (solved on a first try, not on a post-mistake retry). Sticky:
+// it stays counted afterwards. Each card contributes at most 1, regardless of
+// how many times it was shown. The map colours are independent of this flag.
+const isMastered = (e: MasteryEntry) => e.solvedUnaided;
 
 // Russian plural: 1 попытка, 2 попытки, 5 попыток.
 function plural(n: number, [one, few, many]: [string, string, string]): string {

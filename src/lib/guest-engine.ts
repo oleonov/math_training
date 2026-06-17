@@ -141,7 +141,7 @@ export function createGuestApi(): TrainingApi {
       // Fold into the per-card stats (kept for the tab) and session aggregates.
       card.stats = updateStats(
         card.stats,
-        { ...ev, responseTimeMs: input.responseTimeMs },
+        { ...ev, responseTimeMs: input.responseTimeMs, hinted: input.hinted },
         new Date(),
       );
 
@@ -219,6 +219,7 @@ export function createGuestApi(): TrainingApi {
         b: c.b,
         recentAverageScore: c.stats?.recentAverageScore ?? 0,
         attempts: c.stats?.attemptsCount ?? 0,
+        solvedUnaided: c.stats?.solvedUnaided ?? false,
       }));
 
       const summary: SessionSummary = {

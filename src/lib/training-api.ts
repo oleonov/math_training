@@ -15,6 +15,8 @@ export interface AnswerRequest {
   shownB: number;
   userAnswer: number | null;
   responseTimeMs: number;
+  /** The correct answer was shown as a hint (a retry after a previous mistake). */
+  hinted: boolean;
 }
 
 export interface TrainingApi {

@@ -33,13 +33,14 @@ function buildEntries(mode: Mode, rand: () => number): MasteryEntry[] {
     for (let b = 2; b <= 9; b++) {
       const inScope = mode === "full" || (mode === "subset48" && (a === 4 || b === 4 || a === 8 || b === 8));
       if (mode === "empty" || !inScope) {
-        out.push({ a, b, recentAverageScore: 0, attempts: 0 });
+        out.push({ a, b, recentAverageScore: 0, attempts: 0, solvedUnaided: false });
         continue;
       }
       const difficulty = ((a * b) / 81) * 0.6 + (a >= 7 || b >= 7 ? 0.18 : 0);
       const recentAverageScore = clamp(1 - difficulty + (rand() - 0.5) * 0.5);
       const attempts = rand() < 0.1 ? 0 : 1 + Math.floor(rand() * 12);
-      out.push({ a, b, recentAverageScore, attempts });
+      const solvedUnaided = attempts > 0 && rand() < recentAverageScore;
+      out.push({ a, b, recentAverageScore, attempts, solvedUnaided });
     }
   }
   return out;

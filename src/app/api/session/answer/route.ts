@@ -15,6 +15,9 @@ export async function POST(req: Request) {
     const responseTimeMs = toNumberOrNull(body.responseTimeMs);
     // userAnswer may legitimately be null (blank); anything non-numeric -> null.
     const userAnswer = body.userAnswer === null ? null : toNumberOrNull(body.userAnswer);
+    // hinted: the correct answer was shown as a hint on a retry. Default false
+    // for older clients that don't send it.
+    const hinted = body.hinted === true;
 
     if (sessionId === null || cardId === null || shownA === null || shownB === null || responseTimeMs === null) {
       throw new HttpError(400, "Некорректные данные ответа");
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
       shownB,
       userAnswer,
       responseTimeMs: Math.max(0, Math.round(responseTimeMs)),
+      hinted,
     });
     return NextResponse.json(result);
   } catch (e) {
