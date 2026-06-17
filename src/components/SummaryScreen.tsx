@@ -2,6 +2,7 @@
 
 import type { CardSummaryEntry, SessionSummary } from "@/lib/api-types";
 import Celebration from "./Celebration";
+import MasteryMap from "./MasteryMap";
 
 interface Props {
   summary: SessionSummary;
@@ -79,6 +80,10 @@ export default function SummaryScreen({ summary, animationsEnabled, onRestart }:
           <Stat value={summary.wrongCount} label="Ошибок" color="var(--color-wrong)" />
         </div>
       </div>
+
+      {summary.mastery && summary.mastery.length > 0 && (
+        <MasteryMap entries={summary.mastery} />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <CardList

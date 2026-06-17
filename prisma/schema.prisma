@@ -22,7 +22,8 @@ model User {
   sessions Session[]
 }
 
-// Canonical multiplication card: a <= b, both in 2..9. 3x8 and 8x3 share one card.
+// Ordered multiplication card: a, b both in 2..9. 3×8 and 8×3 are TWO distinct
+// cards (each orientation is trained and tracked separately). 64 cards total.
 model Card {
   id     Int @id @default(autoincrement())
   a      Int

@@ -10,14 +10,15 @@ export function canonical(x: number, y: number): [number, number] {
 }
 
 /**
- * The full deck: every multiplication pair with 2 <= a <= b <= 9.
- * Excludes x1 and x10 (out of range) and treats e.g. 3x8 / 8x3 as one card.
- * Exactly 36 cards.
+ * The full deck: every ORDERED multiplication pair (a, b) with a, b in 2..9.
+ * Excludes x1 and x10 (out of range). 3×8 and 8×3 are TWO distinct cards —
+ * a child may know one direction and stumble on the other, so each orientation
+ * is trained and tracked separately. Exactly 64 cards.
  */
 export function generateCards(): CardSpec[] {
   const cards: CardSpec[] = [];
   for (let a = 2; a <= 9; a++) {
-    for (let b = a; b <= 9; b++) {
+    for (let b = 2; b <= 9; b++) {
       cards.push({ a, b, answer: a * b });
     }
   }

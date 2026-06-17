@@ -35,6 +35,15 @@ export interface CardSummaryEntry {
   daysSinceLastAsked: number | null;
 }
 
+/** One ordered card's lifetime mastery, for the heatmap (a, b in 2..9; 7×8 and
+ *  8×7 are separate). */
+export interface MasteryEntry {
+  a: number;
+  b: number;
+  recentAverageScore: number; // EMA, 0..1
+  attempts: number;
+}
+
 export interface SessionSummary {
   totalAnswers: number;
   fastCorrectCount: number;
@@ -43,6 +52,8 @@ export interface SessionSummary {
   averageScore: number;
   weakest: CardSummaryEntry[];
   overdue: CardSummaryEntry[];
+  /** Lifetime mastery of every ordered card (64), for the heatmap. */
+  mastery?: MasteryEntry[];
   /** True when this session beat the best averageScore for the same
    *  (answerTimeLimitSec, trainingDurationMin) pair. Drives the celebration. */
   isNewRecord: boolean;

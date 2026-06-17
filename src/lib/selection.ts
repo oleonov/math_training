@@ -90,8 +90,3 @@ export function pickNextCard(
   const index = weightedPick(weights, rng());
   return candidates[index];
 }
-
-/** Decide the display orientation of a canonical card. r in [0, 1). */
-export function orient(a: number, b: number, r: number): [number, number] {
-  return r < 0.5 ? [a, b] : [b, a];
-}

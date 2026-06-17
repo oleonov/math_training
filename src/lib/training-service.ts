@@ -4,7 +4,6 @@ import { evaluateAnswer } from "./scoring";
 import { updateStats, type CardStats } from "./stats";
 import {
   pickNextCard,
-  orient,
   overdueScore,
   type CardWithStats,
 } from "./selection";
@@ -22,6 +21,7 @@ import type {
   StartResult,
   AnswerResult,
   CardSummaryEntry,
+  MasteryEntry,
   SessionSummary,
 } from "./api-types";
 
@@ -72,11 +72,12 @@ function chooseNext(
   isFirst: boolean,
 ): NextCard {
   const card = pickNextCard(items, recentCardIds, new Date(), rng);
-  const [shownA, shownB] = orient(card.a, card.b, rng());
+  // Cards are ordered: a card's identity IS its orientation, so it is always
+  // shown exactly as (a × b) — no flipping.
   return {
     cardId: card.cardId,
-    shownA,
-    shownB,
+    shownA: card.a,
+    shownB: card.b,
     isFirst,
     answerLength: String(card.a * card.b).length,
   };
@@ -250,6 +251,20 @@ export async function finishSession(
     include: { card: true },
   });
 
+  // Lifetime mastery of EVERY card (64), for the heatmap. Cards the user has
+  // never answered are returned with attempts 0 / score 0 and render grey.
+  const allCards = await prisma.card.findMany({ select: { id: true, a: true, b: true } });
+  const statByCardId = new Map(stats.map((s) => [s.cardId, s]));
+  const mastery: MasteryEntry[] = allCards.map((c) => {
+    const s = statByCardId.get(c.id);
+    return {
+      a: c.a,
+      b: c.b,
+      recentAverageScore: s?.recentAverageScore ?? 0,
+      attempts: s?.attemptsCount ?? 0,
+    };
+  });
+
   const now = Date.now();
   const toEntry = (s: (typeof stats)[number]): CardSummaryEntry => ({
     a: s.card.a,
@@ -279,6 +294,7 @@ export async function finishSession(
     averageScore: session.averageScore,
     weakest,
     overdue,
+    mastery,
     isNewRecord: newRecord,
     previousBestScore,
   };

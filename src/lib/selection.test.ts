@@ -6,7 +6,6 @@ import {
   computePriority,
   weightedPick,
   pickNextCard,
-  orient,
   type CardWithStats,
 } from "./selection";
 import type { CardStats } from "./stats";
@@ -121,12 +120,5 @@ describe("pickNextCard", () => {
   it("falls back to the full deck when every card was asked recently", () => {
     const picked = pickNextCard(items, [1, 2, 3], now, seq([0.5]));
     expect([1, 2, 3]).toContain(picked.cardId);
-  });
-});
-
-describe("orient", () => {
-  it("shows the card in the given order or flipped, based on rng", () => {
-    expect(orient(3, 8, 0.2)).toEqual([3, 8]);
-    expect(orient(3, 8, 0.8)).toEqual([8, 3]);
   });
 });

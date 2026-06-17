@@ -10,7 +10,7 @@
 
 import { evaluateAnswer } from "./scoring";
 import { updateStats } from "./stats";
-import { pickNextCard, orient, overdueScore, type CardWithStats } from "./selection";
+import { pickNextCard, overdueScore, type CardWithStats } from "./selection";
 import { isNewRecord } from "./records";
 import { generateCards, filterCardsByNumbers, normalizeNumbers } from "./cards";
 import {
@@ -19,7 +19,7 @@ import {
   ANTI_REPEAT_WINDOW,
   SUMMARY_LIST_SIZE,
 } from "./config";
-import type { CardSummaryEntry, NextCard, SessionSummary } from "./api-types";
+import type { CardSummaryEntry, MasteryEntry, NextCard, SessionSummary } from "./api-types";
 import type { AnswerRequest, TrainingApi } from "./training-api";
 
 const MS_PER_DAY = 86_400_000;
@@ -68,7 +68,8 @@ interface GuestSession {
  * and "overdue" summaries, but are never persisted. Records go to localStorage.
  */
 export function createGuestApi(): TrainingApi {
-  // The 36-card deck, cardId = stable index. Stats build up across sessions.
+  // The 64-card deck (every ordered pair), cardId = stable index. Stats build up
+  // across sessions.
   const cards: CardWithStats[] = generateCards().map((c, i) => ({
     cardId: i,
     a: c.a,
@@ -82,11 +83,11 @@ export function createGuestApi(): TrainingApi {
 
   function chooseNext(pool: CardWithStats[], recentCardIds: number[], isFirst: boolean): NextCard {
     const card = pickNextCard(pool, recentCardIds, new Date(), rng);
-    const [shownA, shownB] = orient(card.a, card.b, rng());
+    // Ordered cards are shown exactly as (a × b) — no flipping.
     return {
       cardId: card.cardId,
-      shownA,
-      shownB,
+      shownA: card.a,
+      shownB: card.b,
       isFirst,
       answerLength: String(card.a * card.b).length,
     };
@@ -211,6 +212,15 @@ export function createGuestApi(): TrainingApi {
         .slice(0, SUMMARY_LIST_SIZE)
         .map(toEntry);
 
+      // Lifetime mastery of every card (64), for the heatmap. Untouched cards
+      // render grey (attempts 0).
+      const mastery: MasteryEntry[] = cards.map((c) => ({
+        a: c.a,
+        b: c.b,
+        recentAverageScore: c.stats?.recentAverageScore ?? 0,
+        attempts: c.stats?.attemptsCount ?? 0,
+      }));
+
       const summary: SessionSummary = {
         totalAnswers: session.totalAnswers,
         fastCorrectCount: session.fastCorrectCount,
@@ -219,6 +229,7 @@ export function createGuestApi(): TrainingApi {
         averageScore: session.averageScore,
         weakest,
         overdue,
+        mastery,
         isNewRecord: newRecord,
         previousBestScore,
       };

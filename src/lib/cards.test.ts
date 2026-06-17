@@ -21,15 +21,16 @@ describe("canonical", () => {
 describe("generateCards", () => {
   const cards = generateCards();
 
-  it("produces exactly 36 cards (pairs 2..9 with a <= b)", () => {
-    expect(cards).toHaveLength(36);
+  it("produces exactly 64 cards (every ordered pair 2..9)", () => {
+    expect(cards).toHaveLength(64);
   });
 
-  it("keeps every factor in range 2..9 with a <= b", () => {
+  it("keeps every factor in range 2..9", () => {
     for (const c of cards) {
       expect(c.a).toBeGreaterThanOrEqual(2);
+      expect(c.a).toBeLessThanOrEqual(9);
+      expect(c.b).toBeGreaterThanOrEqual(2);
       expect(c.b).toBeLessThanOrEqual(9);
-      expect(c.a).toBeLessThanOrEqual(c.b);
     }
   });
 
@@ -43,12 +44,17 @@ describe("generateCards", () => {
     expect(cards.some((c) => c.a === 10 || c.b === 10)).toBe(false);
   });
 
-  it("treats 3x8 and 8x3 as a single card (only the canonical form exists)", () => {
+  it("treats 3×8 and 8×3 as two distinct cards (both orientations exist)", () => {
     const matches = cards.filter(
       (c) => (c.a === 3 && c.b === 8) || (c.a === 8 && c.b === 3),
     );
-    expect(matches).toHaveLength(1);
-    expect(matches[0]).toMatchObject({ a: 3, b: 8 });
+    expect(matches).toHaveLength(2);
+    expect(matches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ a: 3, b: 8 }),
+        expect.objectContaining({ a: 8, b: 3 }),
+      ]),
+    );
   });
 
   it("has no duplicate pairs", () => {
@@ -86,22 +92,24 @@ describe("filterCardsByNumbers", () => {
   const cards = generateCards();
 
   it("returns the full deck for empty/all selections", () => {
-    expect(filterCardsByNumbers(cards, [])).toHaveLength(36);
-    expect(filterCardsByNumbers(cards, [...SELECTABLE_NUMBERS])).toHaveLength(36);
+    expect(filterCardsByNumbers(cards, [])).toHaveLength(64);
+    expect(filterCardsByNumbers(cards, [...SELECTABLE_NUMBERS])).toHaveLength(64);
   });
 
   it("keeps a card when either factor is selected", () => {
     const fives = filterCardsByNumbers(cards, [5]);
     expect(fives.every((c) => c.a === 5 || c.b === 5)).toBe(true);
-    // The 5-times table: 5×5..5×9 plus 2×5,3×5,4×5 — eight cards.
-    expect(fives).toHaveLength(8);
+    // The 5-times table, both orientations: 5×(2..9) is 8 and (2..9)×5 is 8,
+    // minus the shared 5×5 counted once = 15 cards.
+    expect(fives).toHaveLength(15);
   });
 
   it("unions the selected tables (5 and 8)", () => {
     const picked = filterCardsByNumbers(cards, [5, 8]);
     expect(picked.every((c) => c.a === 5 || c.b === 5 || c.a === 8 || c.b === 8)).toBe(true);
-    // 8 (fives) + 8 (eights) − 1 (the shared 5×8 card) = 15.
-    expect(picked).toHaveLength(15);
+    // Every ordered pair touching 5 or 8: 64 total − 36 with neither factor in
+    // {5,8} (a,b each from the other 6 numbers) = 28.
+    expect(picked).toHaveLength(28);
   });
 
   it("never returns an empty result", () => {
